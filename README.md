@@ -1,24 +1,24 @@
-# keebgen
+# KeebGen
 A python library that gives the poeple who use keyboards the most the power to design their own
 created by Darren Harton and Quentin Torgerson
 
 ## Package Summary
-The keebgen package is intended as a way for programmers to easily generate
+The KeebGen package is intended as a way for programmers to easily generate
 their own custom keyboards. This project was inspired by the Dactyl project,
 but is intended to be a genaric library of building blocks that can be used to
 quickly and easily design any type of keyboard.
 
-keebgen provides users with common keybaord primatives that allow a user to
+KeebGen provides users with common keybaord primatives that allow a user to
 model an entire keyboard without having to worry about the minutia of a design.
 A Cherry MX switch is a standard part, so users should not have to re-draw a
 socket for it every time they want to design a new keyboard. Instead, they can
 just add a CherryMXSocket() to the model and move it to its place.
 
-keebgen uses the [SolidPython](https://github.com/SolidCode/SolidPython) package to generate openscad files. [OpenSCAD](https://www.openscad.org/) is a
+KeebGen uses the [SolidPython](https://github.com/SolidCode/SolidPython) package to generate openscad files. [OpenSCAD](https://www.openscad.org/) is a
 free software that generates 3D models from code. OpenSCAD is a powerful tool
 for making parametric 3D models, but it can be difficult for a python
 programmer to get used to its syntax. The SolidPython package bridges the gap,
-and is the basis of keebgen modeling.
+and is the basis of KeebGen modeling.
 
 
 ## Quick Start

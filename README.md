@@ -1,6 +1,9 @@
 # KeebGen
 A python library that gives the poeple who use keyboards the most the power to design their own
-created by Darren Harton and Quentin Torgerson
+
+### Authors
+- Darren Harton
+- Quentin Torgerson
 
 ## Package Summary
 The KeebGen package is intended as a way for programmers to easily generate
@@ -85,3 +88,6 @@ anchor scheme matches the general scheme of the primative type
 
 Ideally, keyboard models are parametric when appropriate, at a minimum
 allowing users to customize keycap and switch type with a config file
+
+### Contributors
+- someone

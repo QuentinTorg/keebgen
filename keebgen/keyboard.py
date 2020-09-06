@@ -1,3 +1,5 @@
+from abc import ABC, abstractmethod
+
 from keebgen.geometry_base import Assembly
 
 class Keyboard(Assembly):

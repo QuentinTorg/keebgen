@@ -3,7 +3,55 @@ import solid as sl
 import numpy as np
 from functools import partialmethod
 
-from . import transform_utils as utils
+# TODO sad attempts at making a dict of 'classname' : class that can be used to automatically load default configs
+#from . import transform_utils as utils
+#from . import key_assy, keyboard, keycap, switch_socket
+
+#str_to_class = {}
+#for filename in glob(os.path.join(os.path.dirname(os.path.abspath(__file__)), "*.py")):
+#    name = os.path.splitext(os.path.basename(filename))[0]
+#    # add package prefix to name, if required
+#    module = __import__(name)
+#    for member in dir(module):
+#        if inspect.isclass(member):
+#            print(member.__name__)
+#            str_to_class[member.__name__] = member
+
+#for name, obj in inspect.getmembers(key_assy):
+#    if inspect.isclass(obj):
+#        print(obj)
+
+#print(str_to_class)
+#import sys
+#current_module = sys.modules['keycap']
+#print(current_module)
+
+def _sanitize_any_config(config, default_config, class_type=None):
+    return default_config
+#    # populate missing config values with default
+#    if isinstance(config, dict):
+#        for key, value in default_config:
+#            if key in config:
+#                config[key] = _sanitize_any_config(config[key], value, )
+#            else:
+#                config[key] = value
+#    if isinstance(config, list):
+#        for item
+#
+#
+#        # if value is a dict, recurse
+#        if isinstance(value, dict) and key in config:
+#            config[key] = sanitize_any_config(config[key], default_config[key])
+#        elif isinstance(value, list) and key in config:
+#            for i in range(len(value)):
+#                config[key][i] =
+#    if config == None:
+#        return default_config
+#        else:
+#            config[key] = config.get(key, default=value)
+#    return config
+
+
 
 # base class for all solids
 class Solid(ABC):
@@ -25,6 +73,14 @@ class Solid(ABC):
 
     def anchors(self):
         return self._anchors
+
+#TODO    @abstractmethod
+    def default_config(self):
+        return {}
+
+    def _sanitize_config(self, config):
+        return _sanitize_any_config(config, self.default_config())
+
 
 class Assembly(ABC):
     @abstractmethod
@@ -54,6 +110,15 @@ class Assembly(ABC):
             return self._anchors
         # return the anchors of the requested part
         return self._parts[part_name].anchors()
+
+    # maybe defined differently by each assembly type dependong on the parts being used. we will see
+#TODO    @abstractmethod
+    def default_config(self):
+        return self._default_config
+
+    def _sanitize_config(self, config):
+        return _sanitize_any_config(config, self.default_config())
+
 
 
 # top, bottom, left, right are relative to the user sitting at the keyboard

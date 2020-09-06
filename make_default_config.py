@@ -13,8 +13,8 @@ socket_conf['plate_thickness'] = '4.0'
 socket_conf['hot_swap'] = 'false'
 socket_conf['side_nubs'] = 'true'
 
-conf['key'] = {}
-key_conf = conf['key']
+conf['key_assy'] = {}
+key_conf = conf['key_assy']
 key_conf['switch_type'] = 'cherry_mx'
 key_conf['keycap_type'] = 'oem'
 

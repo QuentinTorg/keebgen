@@ -8,8 +8,14 @@ from . import transform_utils as utils
 # when adding new keycaps, they should be oriented so the mounting feature is aligned with the Z axis
 # the bottom face should be offset from the XY plane by the same distance that they would be offset from
 # a mounting plate if they were plate mounted switches
+class Keycap(Solid):
+    def __init__(self):
+        super(Keycap, self).__init__()
 
-class OEM(Solid):
+    def solid(self):
+        return self._solid.set_modifier('%')
+
+class OEM(Keycap):
     def __init__(self, r, u=1):
         super(OEM, self).__init__()
         key_pitch = 19.0 # width between keys on standard board
@@ -81,12 +87,13 @@ class OEM(Solid):
         curve_cut = sl.rotate([90+top_face_angle, 0, 0])(curve_cut)
         curve_cut = sl.translate([0,-top_offset_front,top_curve_radius+top_front_height-top_curve_depth])(curve_cut)
 
-        key_cap = key_cap - curve_cut
-        key_cap = sl.translate([0, bottom_length/2, 0])(key_cap)
         key_cap -= curve_cut
+        key_cap = sl.translate([0, bottom_length/2, 0])(key_cap)
+        corners = utils.translate_points(corners, (0, bottom_length/2, 0))
         key_cap = sl.translate([0, 0, vertical_offset])(key_cap)
+        corners = utils.translate_points(corners, (0, 0, vertical_offset))
         key_cap = sl.color([50 / 255, 175 / 255, 255 / 255, 1])(key_cap)
 
         # setting the % modifier makes it render visually in openscad, but not when exporting to stl
-        self._solid = key_cap.set_modifier('%')
+        self._solid = key_cap
         self._anchors = Hull(corners)

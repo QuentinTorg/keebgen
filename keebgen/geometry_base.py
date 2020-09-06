@@ -20,11 +20,16 @@ class Solid(ABC):
         self._anchors.translate(x,y,z)
 
     def rotate(self, x=0, y=0, z=0, degrees=True):
+        if degrees == False:
+            x = utils.rad2deg(x)
+            y = utils.rad2deg(y)
+            z = utils.rad2deg(z)
         self._solid = sl.rotate([x, y, z])(self._solid)
-        self._anchors.rotate(x,y,z,degrees)
+        self._anchors.rotate(x,y,z)
 
     def anchors(self):
         return self._anchors
+
 
 class Assembly(ABC):
     @abstractmethod
@@ -33,7 +38,7 @@ class Assembly(ABC):
 
     # child __init__() functions responsible for populating self._solid and self._anchors
     def solid(self):
-        out_solid = None
+        out_solid = sl.part()
         for part in self._parts.values():
             out_solid += part.solid()
         return out_solid
@@ -44,9 +49,9 @@ class Assembly(ABC):
             part.translate(x, y, z)
 
     def rotate(self, x=0, y=0, z=0, degrees=True):
-        self._anchors.rotate(x,y,z,degrees)
+        self._anchors.rotate(x, y, z, degrees)
         for part in self._parts.values():
-            part.rotate(x, y, z)
+            part.rotate(x, y, z, degrees)
 
     def anchors(self, part_name=None):
         # return assembly anchors if no part specified
@@ -59,19 +64,44 @@ class Assembly(ABC):
 # top, bottom, left, right are relative to the user sitting at the keyboard
 class Hull(object):
     def __init__(self, corners):
+        # assumes a volume. No more than 4 corners should be in plane or behavior is undefined
         """
         sorted corner ordering
            3-------7
           /|      /|
-         / |     / | Y
+         / |     / | Z
         2--|----6  |
         |  1----|--5
-        | /     | / Z
+        | /     | / Y
         0-------4
             X
         """
-        self.corners = np.array(sorted(corners)).reshape((2,2,2,3))
+        assert len(corners) == 8
+        self.corners = np.array(self._sort_corners(corners)).reshape((2,2,2,3))
         self._output_shape = (4,3)
+
+    def _sort_corners(self, corners):
+        assert len(corners) == 8
+        top_corners = sorted(corners, key = lambda x: x[2])[:4]
+        bottom_corners = sorted(corners, key = lambda x: x[2], reverse=True)[:4]
+        front_top_corners = sorted(top_corners, key = lambda x: x[1])[:2]
+        back_top_corners = sorted(top_corners, key = lambda x: x[1], reverse=True)[:2]
+        front_bottom_corners = sorted(bottom_corners, key = lambda x: x[1])[:2]
+        back_bottom_corners = sorted(bottom_corners, key = lambda x: x[1], reverse=True)[:2]
+
+        # sorted corners match indices in __init__ ascii art
+        sorted_corners = []
+        # left
+        sorted_corners.append(sorted(back_bottom_corners, key=lambda x: x[0])[0])
+        sorted_corners.append(sorted(front_bottom_corners, key=lambda x: x[0])[0])
+        sorted_corners.append(sorted(back_top_corners, key=lambda x: x[0])[0])
+        sorted_corners.append(sorted(front_top_corners, key=lambda x: x[0])[0])
+        # right
+        sorted_corners.append(sorted(back_bottom_corners, key=lambda x: x[0])[1])
+        sorted_corners.append(sorted(front_bottom_corners, key=lambda x: x[0])[1])
+        sorted_corners.append(sorted(back_top_corners, key=lambda x: x[0])[1])
+        sorted_corners.append(sorted(front_top_corners, key=lambda x: x[0])[1])
+        return sorted_corners
 
     def _get_side(self, slice):
         coords =  self.corners[slice].reshape(self._output_shape)
@@ -81,18 +111,17 @@ class Hull(object):
         for i in range(len(self.corners)):
             for j in range(len(self.corners[i])):
                 for k in range(len(self.corners[i][j])):
-                    self.corners[i][j][k] = utils.translate_point(self.corners[i][j][k], (x,y,z))
+                    self.corners[i,j,k] = utils.translate_point(self.corners[i,j,k], (x,y,z))
 
     def rotate(self, x=0, y=0, z=0, degrees=True):
         for i in range(len(self.corners)):
             for j in range(len(self.corners[i])):
                 for k in range(len(self.corners[i][j])):
-                    self.corners[i][j][k] = utils.rotate_point(self.corners[i][j][k], (x,y,z), degrees)
-
+                    self.corners[i,j,k] = np.array(utils.rotate_point(self.corners[i,j,k], (x,y,z), degrees))
 
     right  = partialmethod(_get_side, np.s_[1,:,:])
     left   = partialmethod(_get_side, np.s_[0,:,:])
-    top    = partialmethod(_get_side, np.s_[:,1,:])
-    bottom = partialmethod(_get_side, np.s_[:,0,:])
-    front  = partialmethod(_get_side, np.s_[:,:,1])
-    back   = partialmethod(_get_side, np.s_[:,:,0])
+    bottom    = partialmethod(_get_side, np.s_[:,1,:])
+    top = partialmethod(_get_side, np.s_[:,0,:])
+    back  = partialmethod(_get_side, np.s_[:,:,1])
+    front = partialmethod(_get_side, np.s_[:,:,0])

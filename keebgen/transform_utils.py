@@ -4,7 +4,6 @@ from scipy.spatial.transform import Rotation
 def deg2rad(degrees: float) -> float:
     return degrees * pi / 180
 
-
 def rad2deg(rad: float) -> float:
     return rad * 180 / pi
 
@@ -19,7 +18,6 @@ def rotate_points(points, eulers, degrees=True):
 def rotate_point(point, eulers, degrees=True):
     return rotate_points(point, eulers, degrees)
 
-
 def translate_point(p, t):
     assert len(t) == 3
     assert len(p) == 3
@@ -32,3 +30,18 @@ def translate_points(points, t):
     for point in points:
         new_points.append(translate_point(point, t))
     return new_points
+
+# return the mean of the individual x, y, and z values of points
+def mean_point(points):
+    # TODO this is inelegant but I was sure it would work. could use cleanup and a test
+    mean_point = [0, 0, 0]
+    for point in points:
+        assert len(point) == 3
+        mean_point[0] += point[0]
+        mean_point[1] += point[1]
+        mean_point[2] += point[2]
+
+    mean_point[0] = mean_point[0] / len(points)
+    mean_point[1] = mean_point[1] / len(points)
+    mean_point[2] = mean_point[2] / len(points)
+    return mean_point

@@ -10,9 +10,30 @@ from . import transform_utils as utils
 # a mounting plate if they were plate mounted switches
 
 class OEM(Solid):
-    def __init__(self, r, u=1):
+    def default_config(self):
+        self._default_config = {
+                'key_pitch' : 19.0, # used for sizing keys >1u
+                'vertical_offset' : 5.5, # vertical height from plate when mounted on switch
+                '1u_bottom_width' : 18.0,
+                '1u_bottom_length' : 18.0,
+                '1u_top_width' : 12.5,
+                '1u_top_length' : 14.5,
+                'top_curve_depth' :  0.85,
+                'r1' : {'top_front_height' : 11.5,
+                        'top_back_height' : 11.05},
+                'r2' : {'top_front_height' : 9.1,
+                        'top_back_height' : 9.35},
+                'r3' : {'top_front_height' : 8.0,
+                        'top_back_height' : 9.35},
+                'r4' : {'top_front_height' : 8.05,
+                        'top_back_height' : 10.25}
+                }
+
+    def __init__(self, r, u=1, config=None):
         super(OEM, self).__init__()
-        key_pitch = 19.0 # width between keys on standard board
+        config = self._sanitize_config(config)
+
+        key_pitch = 19.0
 
         vertical_offset = 5.5 # vertical height from plate mount when mounted on switch
         bottom_width = 18.0 + key_pitch * (u-1);
@@ -90,3 +111,4 @@ class OEM(Solid):
         # setting the % modifier makes it render visually in openscad, but not when exporting to stl
         self._solid = key_cap.set_modifier('%')
         self._anchors = Hull(corners)
+

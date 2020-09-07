@@ -18,7 +18,7 @@ class DactylManuform(Keyboard):
     def __init__(self, config, col_config, key_config, socket_config):
         super().__init__()
 
-        # TODO add config parsing
+        # TODO add config parsing. this is terrible right now
         # there should ideally be a different column config for each row, but this will do for proof of concept
         # all of these numbers should come from the config file or default config
         # TODO will want different spacing for end cols if they are tilted
@@ -36,9 +36,9 @@ class DactylManuform(Keyboard):
                 new_conf.set(section_name, key, col_config.get(key))
             # add extra row a t bottom for middle and ring fingers
 
-            #if col == 2 or col == 3:
-            #    col_config[-1]['num_keys'] = str(5)
-            #    col_config[-1]['home_index'] = str(2)
+            if col == 2 or col == 3:
+                new_conf.set(section_name, 'num_keys', str(5))
+                new_conf.set(section_name, 'home_index', str(2))
 
             # set side lean
             if col == 0:
@@ -109,21 +109,94 @@ class DactylManuform(Keyboard):
             shift = col_num - 1
             self._parts[name].translate(col_x_spacing*shift+col_fudge, y_off, z_off)
 
-#            if prev_col_name is not None:
-#                # add connectors between previous col and this col
-#                # must check if row in this col existed in prev cal and vv.
-#                prev_col = self._parts[prev_name]
-#                cur_col = self._parts[name]
-#
-#                #TODO make this prettier
-#                for row in range(-6, 6):
-#                    prev_col_key = prev_col.part(row)
-#                    cur_col_key = cur_col.part(row)
-#
-#                    if
-#                    cur_col_anchors = self._parts[name].anchors('socket')
-#                    if self._parts[prev_name].
-#
+            def add_connector(*args):
+                self._parts['connector'+str(connector_count)] = Connector(*args)
+                connector_count += 1
+
+            if prev_name is not None:
+                # add connectors between previous col and this col
+                # must check if row in this col existed in prev cal and vv.
+                prev_col = self._parts[prev_name]
+                cur_col = self._parts[name]
+
+                #TODO make this prettier
+                prev_col_prev_anchors = None
+                cur_col_prev_anchors = None
+                for row in range(-6, 6):
+                    prev_col_key = prev_col.part(row)
+                    cur_col_key = cur_col.part(row)
+
+                    prev_col_anchors = None
+                    if prev_col_key is not None:
+                        prev_col_anchors = prev_col_key.anchors('socket')
+                    cur_col_anchors = None
+                    if cur_col_key is not None:
+                        cur_col_anchors = cur_col_key.anchors('socket')
+
+                    # TODO this is really annoying
+                    # naming is bad too, "connect connectors"
+
+                    # normal case, both connectors exist
+                    # connect adjacent socket edges
+                    if prev_col_anchors and cur_col_anchors:
+                        self._parts['connector'+str(connector_count)] = Connector(
+                                prev_col_anchors.right(),
+                                cur_col_anchors.left())
+                        connector_count += 1
+
+                    # cur and prev rows exist for both cols
+                    # connect the connectors that are between the cur and prev rows for each col
+                    if prev_col_anchors and prev_col_prev_anchors and cur_col_anchors and cur_col_prev_anchors:
+                        self._parts['connector'+str(connector_count)] = Connector(
+                                prev_col_anchors.right() & prev_col_anchors.back(),
+                                prev_col_prev_anchors.right() & prev_col_prev_anchors.front(),
+                                cur_col_anchors.left() & cur_col_anchors.back(),
+                                cur_col_prev_anchors.left() & cur_col_prev_anchors.front())
+                        connector_count += 1
+
+
+                    # these four conditionals handle the end conditions when one col is shorter than the other
+
+                    # prev_col one longer on bottom
+                    if prev_col_anchors and prev_col_prev_anchors and cur_col_anchors and not cur_col_prev_anchors:
+                        self._parts['connector'+str(connector_count)] = Connector(
+                                prev_col_anchors.right() & prev_col_anchors.back(),
+                                prev_col_prev_anchors.right(),
+                                cur_col_anchors.left() & cur_col_anchors.back())
+                        connector_count += 1
+
+                    # cur_col one longer on bottom
+                    if prev_col_anchors and not prev_col_prev_anchors and cur_col_anchors and cur_col_prev_anchors:
+                        self._parts['connector'+str(connector_count)] = Connector(
+                                prev_col_anchors.right() & prev_col_anchors.bottom(),
+                                cur_col_anchors.left() & cur_col_anchors.bottom(),
+                                cur_col_prev_anchors.left())
+                        connector_count += 1
+
+                    # prev_col one longer on top
+                    if prev_col_anchors and prev_col_prev_anchors and not cur_col_anchors and cur_col_prev_anchors:
+                        self._parts['connector'+str(connector_count)] = Connector(
+                                prev_col_anchors.right(),
+                                prev_col_prev_anchors.right() & prev_col_prev_anchors.front(),
+                                cur_col_prev_anchors.left() & cur_col_prev_anchors.front())
+                        connector_count += 1
+
+                    # cur_col one longer on top
+                    if not prev_col_anchors and prev_col_prev_anchors and cur_col_anchors and cur_col_prev_anchors:
+                        self._parts['connector'+str(connector_count)] = Connector(
+                                prev_col_prev_anchors.right() & prev_col_prev_anchors.front(),
+                                cur_col_anchors.left(),
+                                cur_col_prev_anchors.left() & cur_col_prev_anchors.front())
+                        connector_count += 1
+
+
+
+
+
+                    prev_col_prev_anchors = prev_col_anchors
+                    cur_col_prev_anchors = cur_col_anchors
+
+            prev_name = name
 #
 #
 #

@@ -23,6 +23,7 @@ class CurvedOrtholinearColumn(KeyColumn):
         gap = config.getfloat('key_gap')
         num_keys = config.getint('num_keys')
         home_index = config.getint('home_index')
+        key_lean = config.getfloat('key_lean')
 
         self._parts = {}
         for i in range(num_keys):
@@ -35,6 +36,7 @@ class CurvedOrtholinearColumn(KeyColumn):
 
             key_name = 'key'+str(i)
             self._parts[key_name] = (key_assy.FaceAlignedKey(key_config, socket_config, r))
+            self._parts[key_name].rotate(0, key_lean, 0)
             self._parts[key_name].translate(0, 0, -radius)
 
             #some function of gap

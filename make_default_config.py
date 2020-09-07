@@ -27,5 +27,7 @@ col_conf['key_gap'] = '2.5'
 col_conf['key_side_lean'] = '0.0' # individually lean each key by this angle (about Y axis)
 col_conf['home_tiltback_angle'] = '0.0' # angle of the home row key (rotate about X axis)
 
+conf['keyboard'] = {} # will populate later
+
 with open('default_config.ini', 'w') as configfile:
     conf.write(configfile)

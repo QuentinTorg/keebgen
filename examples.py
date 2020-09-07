@@ -6,7 +6,8 @@ import configparser
 from keebgen.switch_socket import CherryMXSocket
 from keebgen.keycap import OEM
 from keebgen.key_assy import SocketAlignedKey, FaceAlignedKey
-from keebgen.key_column import CurvedOrtholinearColumn
+from keebgen.key_column import ConcaveOrtholinearColumn
+from keebgen.keyboard import DactylManuform
 
 def main():
     config = configparser.ConfigParser()
@@ -58,9 +59,13 @@ def main():
     face_aligned_keys_output = intermediates_dir / 'face_aligned_keys.scad'
     sl.scad_render_to_file(key_solid, face_aligned_keys_output)
 
-    curved_column = CurvedOrtholinearColumn(config['column'], config['key_assy'], config['socket'])
+    curved_column = ConcaveOrtholinearColumn(config['column'], config['key_assy'], config['socket'])
     col_output = intermediates_dir / 'curved_column.scad'
     sl.scad_render_to_file(curved_column.solid(), col_output)
+
+    keyboard = DactylManuform(config['keyboard'], config['column'], config['key_assy'], config['socket'])
+    keyboard_output = intermediates_dir / 'keyboard.scad'
+    sl.scad_render_to_file(keyboard.solid(), keyboard_output)
 
 
 if __name__ == '__main__':

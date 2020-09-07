@@ -5,17 +5,16 @@ import solid as sl
 from .geometry_base import Assembly, Hull
 from . import geometry_utils as utils
 from . import key_assy
-from . import connector
+from .connector import Connector
 
 class KeyColumn(Assembly):
     @abstractmethod
     def __init__(self):
         super(KeyColumn, self).__init__()
 
-
-class CurvedOrtholinearColumn(KeyColumn):
+class ConcaveOrtholinearColumn(KeyColumn):
     def __init__(self, config, key_config, socket_config):
-        super(CurvedOrtholinearColumn, self).__init__()
+        super(ConcaveOrtholinearColumn, self).__init__()
 
         radius = config.getfloat('radius')
         gap = config.getfloat('key_gap')
@@ -26,6 +25,8 @@ class CurvedOrtholinearColumn(KeyColumn):
 
         self._parts = {}
         prev_anchors = None
+        first_key_name = None
+        last_key_name = None
         for i in range(num_keys):
             r = 4-i + (home_index-1)
             rotation_index = i - home_index
@@ -36,6 +37,10 @@ class CurvedOrtholinearColumn(KeyColumn):
 
             # for alignment across rows, name keys by index from the home row. negative is below home
             key_name = rotation_index
+            if first_key_name is None:
+                first_key_name = key_name
+            last_key_name = key_name
+
 
             # add a key_assy to the parts
             self._parts[key_name] = (key_assy.FaceAlignedKey(key_config, socket_config, r))
@@ -58,10 +63,10 @@ class CurvedOrtholinearColumn(KeyColumn):
 
             if prev_anchors is not None:
                 connector_name = 'connector'+str(i-1)+'to'+str(i)
-                self._parts[connector_name] = connector.Connector(self._parts[key_name].anchors('socket').back(), prev_anchors)
+                self._parts[connector_name] = Connector(self._parts[key_name].anchors('socket').back(), prev_anchors)
 
             # remember where to connect the next key
             prev_anchors = self._parts[key_name].anchors('socket').front()
 
-        self._anchors = Hull(self._parts[0].anchors('socket').back() | self._parts[num_keys-1].anchors('socket').front())
+        self._anchors = Hull(self._parts[first_key_name].anchors('socket').back() | self._parts[last_key_name].anchors('socket').front())
         self.rotate(home_angle, 0, 0, degrees=True)

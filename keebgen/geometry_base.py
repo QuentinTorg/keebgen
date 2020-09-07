@@ -9,7 +9,28 @@ from . import geometry_utils as utils
 class Solid(ABC):
     @abstractmethod
     def __init__(self):
-        pass
+        # check if defined
+        try:
+            self._anchors
+        except AttributeError:
+            # not defined
+            # define arbitrary anchors for compatibility
+            self._anchors = Hull(((0, 0, 0),
+                                  (1, 0, 0),
+                                  (1, 1, 0),
+                                  (0, 1, 0),
+                                  (0, 0, 1),
+                                  (1, 0, 1),
+                                  (1, 1, 1),
+                                  (0, 1, 1)))
+        # check if defined
+        try:
+            self._solid
+        except AttributeError:
+            # not defined
+            # define arbitrary solid for compatibility
+            self._solid = sl.part()
+
 
     # child __init__() functions responsible for populating self._solid and self._anchors
     def solid(self):
@@ -58,7 +79,12 @@ class Assembly(ABC):
         if part_name == None:
             return self._anchors
         # return the anchors of the requested part
-        return self._parts[part_name].anchors()
+        if self._parts.get(part_name):
+            return self._parts[part_name].anchors()
+        return None
+
+    def part(self, part_name):
+        return self._parts.get(part_name)
 
 
 # top, bottom, left, right are relative to the user sitting at the keyboard

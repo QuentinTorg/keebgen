@@ -3,7 +3,7 @@ import solid as sl
 import numpy as np
 
 from .geometry_base import Assembly, Hull
-from . import transform_utils as utils
+from . import geometry_utils as utils
 from . import switch_socket
 from . import keycap
 

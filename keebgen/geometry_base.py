@@ -3,7 +3,7 @@ import solid as sl
 import numpy as np
 from functools import partialmethod
 
-from . import transform_utils as utils
+from . import geometry_utils as utils
 
 # base class for all solids
 class Solid(ABC):

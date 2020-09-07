@@ -3,7 +3,7 @@ import numpy as np
 import solid as sl
 
 from .geometry_base import Solid, Hull
-from . import transform_utils as utils
+from . import geometry_utils as utils
 
 # when adding new keycaps, they should be oriented so the mounting feature is aligned with the Z axis
 # the bottom face should be offset from the XY plane by the same distance that they would be offset from

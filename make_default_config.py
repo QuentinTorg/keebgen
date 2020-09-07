@@ -23,8 +23,9 @@ col_conf = conf['column']
 col_conf['num_keys'] = '4' # number of keys in column
 col_conf['home_index'] = '1' # 0 indexed, starting with bottom-most key
 col_conf['radius'] = '55'
-col_conf['key_gap'] = '2.25'
-col_conf['key_lean'] = '0.0'
+col_conf['key_gap'] = '2.5'
+col_conf['key_side_lean'] = '0.0' # individually lean each key by this angle (about Y axis)
+col_conf['home_tiltback_angle'] = '0.0' # angle of the home row key (rotate about X axis)
 
 with open('default_config.ini', 'w') as configfile:
     conf.write(configfile)

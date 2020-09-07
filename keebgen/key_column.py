@@ -17,11 +17,6 @@ class CurvedOrtholinearColumn(KeyColumn):
     def __init__(self, config, key_config, socket_config):
         super(CurvedOrtholinearColumn, self).__init__()
 
-        # config has the following
-            # num_keys
-            # curve_radius
-            # key_gap # gap between each key @ the top face
-
         radius = config.getfloat('radius')
         gap = config.getfloat('key_gap')
         num_keys = config.getint('num_keys')
@@ -39,8 +34,10 @@ class CurvedOrtholinearColumn(KeyColumn):
             if r > 4:
                 r = 4
 
+            # for alignment across rows, name keys by index from the home row. negative is below home
+            key_name = rotation_index
+
             # add a key_assy to the parts
-            key_name = i
             self._parts[key_name] = (key_assy.FaceAlignedKey(key_config, socket_config, r))
             self._parts[key_name].rotate(0, key_lean, 0)
             self._parts[key_name].translate(0, 0, -radius)
@@ -52,12 +49,10 @@ class CurvedOrtholinearColumn(KeyColumn):
             y_front = center_top_front_anchor[1]
             y_back = center_top_back_anchor[1]
 
-            # find angle to rotate to space keys properly
+            # find rotation angle to create one gap width between adjacent keys
             one_offset = np.arctan(abs(y_front)/radius) + np.arctan(abs(y_back)/radius) + 2 * np.arctan(gap/(2*radius))
 
-            #some function of gap
-            #TODO figure out the angle
-            rotation_angle = one_offset * -rotation_index # some function of gap
+            rotation_angle = one_offset * -rotation_index
             self._parts[key_name].rotate(-rotation_angle, 0, 0, degrees=False)
             self._parts[key_name].translate(0, 0, radius)
 

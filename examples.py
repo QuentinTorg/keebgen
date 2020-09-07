@@ -6,6 +6,7 @@ import configparser
 from keebgen.switch_socket import CherryMXSocket
 from keebgen.keycap import OEM
 from keebgen.key_assy import SocketAlignedKey, FaceAlignedKey
+from keebgen.key_column import CurvedOrtholinearColumn
 
 def main():
     config = configparser.ConfigParser()
@@ -56,6 +57,10 @@ def main():
         key_solid += key.solid()
     face_aligned_keys_output = intermediates_dir / 'face_aligned_keys.scad'
     sl.scad_render_to_file(key_solid, face_aligned_keys_output)
+
+    curved_column = CurvedOrtholinearColumn(config['column'], config['key_assy'], config['socket'])
+    col_output = intermediates_dir / 'curved_column.scad'
+    sl.scad_render_to_file(curved_column.solid(), col_output)
 
 
 if __name__ == '__main__':

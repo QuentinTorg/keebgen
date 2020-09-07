@@ -1,5 +1,7 @@
 # project specific
 *.scad
+*.swp
+*.orig
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

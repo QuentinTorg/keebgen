@@ -19,8 +19,7 @@ def main():
 
     # key switch socket
     socket = CherryMXSocket(config['socket'])
-    socket_output = intermediates_dir / 'socket.scad'
-    sl.scad_render_to_file(socket.solid(), socket_output)
+    socket.to_file(intermediates_dir / 'socket.scad')
 
     # keycap
     keycaps = []
@@ -34,7 +33,6 @@ def main():
         keycapsolid += key.solid()
     keycap_output = intermediates_dir / 'keycaps.scad'
     sl.scad_render_to_file(keycapsolid, keycap_output)
-
 
     # key_assy
     socket_aligned_keys = []
@@ -60,12 +58,10 @@ def main():
     sl.scad_render_to_file(key_solid, face_aligned_keys_output)
 
     curved_column = ConcaveOrtholinearColumn(config['column'], config['key_assy'], config['socket'])
-    col_output = intermediates_dir / 'curved_column.scad'
-    sl.scad_render_to_file(curved_column.solid(), col_output)
+    curved_column.to_file(intermediates_dir / 'curved_column.scad')
 
     keyboard = DactylManuform(config['keyboard'], config['column'], config['key_assy'], config['socket'])
-    keyboard_output = intermediates_dir / 'keyboard.scad'
-    sl.scad_render_to_file(keyboard.solid(), keyboard_output)
+    keyboard.to_file(intermediates_dir / 'keyboard.scad')
 
 
 if __name__ == '__main__':

@@ -15,14 +15,8 @@ class Solid(ABC):
         except AttributeError:
             # not defined
             # define arbitrary anchors for compatibility
-            self._anchors = Hull(((0, 0, 0),
-                                  (1, 0, 0),
-                                  (1, 1, 0),
-                                  (0, 1, 0),
-                                  (0, 0, 1),
-                                  (1, 0, 1),
-                                  (1, 1, 1),
-                                  (0, 1, 1)))
+            self._anchors = Hull(((0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0),
+                                  (0, 0, 1), (1, 0, 1), (1, 1, 1), (0, 1, 1)))
         # check if defined
         try:
             self._solid
@@ -51,28 +45,83 @@ class Solid(ABC):
     def anchors(self):
         return self._anchors
 
+    def to_file(self, file_name):
+        sl.scad_render_to_file(self.solid(), file_name)
+
 
 class Assembly(ABC):
+    class PartCollection:
+        def __init__(self):
+            self._part_list = []
+            self._index_lookup = {}
+
+        def add(self, part, name=None):
+            # if name provided, track index
+            if name is not None:
+                if name in self._index_lookup:
+                    raise Exception(str(name)+'already in this PartCollection')
+                self._index_lookup[name] = len(self._part_list)
+            self._part_list.append(part)
+
+        def get(self, name):
+            if name in self._index_lookup:
+                return self._part_list[self._index_lookup[name]]
+            return None
+
+        def solid(self):
+            solids = sl.part()
+            for part in self._part_list:
+                solids += part.solid()
+            return solids
+
+        def translate(self, x=0, y=0, z=0, name=None):
+            # return specific part
+            if name is not None:
+                self._part_list[self._index_lookup.get(name)].translate(x,y,z)
+                return
+            # no part specified, translate all parts
+            for part in self._part_list:
+                part.translate(x,y,z)
+
+        def rotate(self, x=0, y=0, z=0, degrees=True, name=None):
+            # return specific part
+            if name is not None:
+                self._part_list[self._index_lookup.get(name)].rotate(x,y,z,degrees)
+                return
+            # no part specified, rotate all parts
+            for part in self._part_list:
+                part.rotate(x, y, z, degrees)
+
     @abstractmethod
     def __init__(self):
-        pass
+        # check if defined
+        try:
+            self._parts
+        except AttributeError:
+            # not defined
+            # define arbitrary solid for compatibility
+            self._parts = self.PartCollection()
 
-    # child __init__() functions responsible for populating self._solid and self._anchors
+        # check if defined
+        try:
+            self._anchors
+        except AttributeError:
+            # not defined
+            # define arbitrary anchors for compatibility
+            self._anchors = Hull(((0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0),
+                                  (0, 0, 1), (1, 0, 1), (1, 1, 1), (0, 1, 1)))
+
+    # child __init__() functions responsible for populating self._parts and self._anchors
     def solid(self):
-        out_solid = sl.part()
-        for part in self._parts.values():
-            out_solid += part.solid()
-        return out_solid
+        return self._parts.solid()
 
     def translate(self, x=0, y=0, z=0):
         self._anchors.translate(x,y,z)
-        for part in self._parts.values():
-            part.translate(x, y, z)
+        self._parts.translate(x,y,z)
 
     def rotate(self, x=0, y=0, z=0, degrees=True):
         self._anchors.rotate(x, y, z, degrees)
-        for part in self._parts.values():
-            part.rotate(x, y, z, degrees)
+        self._parts.rotate(x,y,z, degrees)
 
     def anchors(self, part_name=None):
         # return assembly anchors if no part specified
@@ -80,11 +129,14 @@ class Assembly(ABC):
             return self._anchors
         # return the anchors of the requested part
         if self._parts.get(part_name):
-            return self._parts[part_name].anchors()
+            return self._parts.get(part_name).anchors()
         return None
 
-    def part(self, part_name):
+    def get_part(self, part_name):
         return self._parts.get(part_name)
+
+    def to_file(self, file_name):
+        sl.scad_render_to_file(self.solid(), file_name)
 
 
 # top, bottom, left, right are relative to the user sitting at the keyboard

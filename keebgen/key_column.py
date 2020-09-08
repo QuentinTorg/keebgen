@@ -23,7 +23,6 @@ class ConcaveOrtholinearColumn(KeyColumn):
         key_lean = config.getfloat('key_side_lean')
         home_angle = config.getfloat('home_tiltback_angle')
 
-        self._parts = {}
         prev_anchors = None
         first_key_name = None
         last_key_name = None
@@ -43,12 +42,12 @@ class ConcaveOrtholinearColumn(KeyColumn):
 
 
             # add a key_assy to the parts
-            self._parts[key_name] = (key_assy.FaceAlignedKey(key_config, socket_config, r))
-            self._parts[key_name].rotate(0, key_lean, 0)
-            self._parts[key_name].translate(0, 0, -radius)
+            self._parts.add(key_assy.FaceAlignedKey(key_config, socket_config, r), key_name)
+            self._parts.rotate(0, key_lean, 0, name=key_name)
+            self._parts.translate(0, 0, -radius, name=key_name)
 
             # get y values from top face of the key
-            anchors = self._parts[key_name].anchors()
+            anchors = self.anchors(key_name)
             center_top_front_anchor = utils.mean_point(anchors.top() & anchors.front())
             center_top_back_anchor = utils.mean_point(anchors.top() & anchors.back())
             y_front = center_top_front_anchor[1]
@@ -58,15 +57,14 @@ class ConcaveOrtholinearColumn(KeyColumn):
             one_offset = np.arctan(abs(y_front)/radius) + np.arctan(abs(y_back)/radius) + 2 * np.arctan(gap/(2*radius))
 
             rotation_angle = one_offset * -rotation_index
-            self._parts[key_name].rotate(-rotation_angle, 0, 0, degrees=False)
-            self._parts[key_name].translate(0, 0, radius)
+            self._parts.rotate(-rotation_angle, 0, 0, degrees=False, name=key_name)
+            self._parts.translate(0, 0, radius, name=key_name)
 
             if prev_anchors is not None:
-                connector_name = 'connector'+str(i-1)+'to'+str(i)
-                self._parts[connector_name] = Connector(self._parts[key_name].anchors('socket').back(), prev_anchors)
+                self._parts.add(Connector(self.get_part(key_name).anchors('socket').back(), prev_anchors))
 
             # remember where to connect the next key
-            prev_anchors = self._parts[key_name].anchors('socket').front()
+            prev_anchors = self.get_part(key_name).anchors('socket').front()
 
-        self._anchors = Hull(self._parts[first_key_name].anchors('socket').back() | self._parts[last_key_name].anchors('socket').front())
+        self._anchors = Hull(self.get_part(first_key_name).anchors('socket').back() | self.get_part(last_key_name).anchors('socket').front())
         self.rotate(home_angle, 0, 0, degrees=True)

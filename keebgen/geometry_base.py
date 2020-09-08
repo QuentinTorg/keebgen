@@ -77,7 +77,7 @@ class Assembly(ABC):
         def translate(self, x=0, y=0, z=0, name=None):
             # return specific part
             if name is not None:
-                self._part_list[self._index_lookup.get(name)].translate(x,y,z)
+                self.get(name).translate(x,y,z)
                 return
             # no part specified, translate all parts
             for part in self._part_list:
@@ -86,7 +86,7 @@ class Assembly(ABC):
         def rotate(self, x=0, y=0, z=0, degrees=True, name=None):
             # return specific part
             if name is not None:
-                self._part_list[self._index_lookup.get(name)].rotate(x,y,z,degrees)
+                self.get(name).rotate(x,y,z,degrees)
                 return
             # no part specified, rotate all parts
             for part in self._part_list:

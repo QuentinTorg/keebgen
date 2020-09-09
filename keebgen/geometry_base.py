@@ -256,8 +256,13 @@ class Anchors():
     # this could be replaced with a function called anchors() or similar
     # when anchor is called, return new Anchor that contains only points with specified faces
     # *args is a list of any number of face specifiers, usually strings
-    def __call__(self, *args):
-        faces = set(args)
+    def __getitem__(self, args):
+        if isinstance(args, str):
+            faces = set()
+            faces.add(args)
+        else:
+            faces = set(args)
+        print(faces)
         ret_anchors = []
         for anchor in self._anchors:
             if len(faces & anchor.faces) == len(faces):

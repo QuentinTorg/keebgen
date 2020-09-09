@@ -15,15 +15,15 @@ cube_input_corners = [
 
 cube_anchors = Anchors(cube_input_corners)
 print('cube_anchors\n',cube_anchors)
-print('top_anchors\n',cube_anchors('top'))
-print('top_right_anchors\n',cube_anchors('top','right'))
+print('\ntop_anchors\n',cube_anchors['top'])
+print('\ntop_right_anchors\n',cube_anchors['top','right'])
 
-print('access each anchor object in achors')
+print('\naccess each anchor object in achors')
 for anchor in cube_anchors:
     print(anchor)
 
 # alternatively
-print('access each xyz point in anchors')
+print('\naccess each xyz point in anchors')
 for x,y,z in cube_anchors:
     # cannot reassign the point value using these becuase they are floats
     print(x,y,z)

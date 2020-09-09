@@ -203,3 +203,81 @@ class Hull(object):
     top = partialmethod(_get_side, np.s_[:,0,:])
     back  = partialmethod(_get_side, np.s_[:,:,1])
     front = partialmethod(_get_side, np.s_[:,:,0])
+
+# proposed replacement for Hull class
+class Anchors():
+    # subclass to represent each point
+    class Anchor():
+        def __init__(self, point, faces):
+            assert(len(point) == 3)
+            self.point = point
+            self.faces = set()
+            for face in faces:
+                self.faces.add(face)
+
+        # makes points behave as though it is a list of points
+        def __iter__(self):
+            return iter(self.point)
+
+        def __len__(self):
+            return len(self.point)
+
+        def __str__(self):
+            return 'point:' + str(self.point) + ' faces:' + str(self.faces)
+
+        # maybe not useful?
+        #def __contains__(self, face):
+        #    # check 'face in self'
+        def translate(self, x=0, y=0, z=0):
+            self.point = utils.translate_point(self.point, (x,y,z))
+        def rotate(self, x=0, y=0, z=0, degrees=True):
+            self.point = utils.rotate_point(self.point, (x,y,z), degrees)
+
+
+    def __init__(self, points):
+        self._anchors = [];
+        # points come in as a collection of elements
+        # each element has the form ((x,y,z), ('facenameA', 'facenameB'))
+        for point in points:
+            assert(len(point) == 2)
+            self._anchors.append(self.Anchor(point[0], point[1]))
+
+    # this could be replaced with a function called anchors() or similar
+    # when anchor is called, return new Anchor that contains only points with specified faces
+    # *args is a list of any number of face specifiers, usually strings
+    def __call__(self, *args):
+        faces = set(args)
+        ret_anchors = []
+        for anchor in self._anchors:
+            if len(faces & anchor.faces) == len(faces):
+                ret_anchors.append((anchor.point, anchor.faces))
+        return Anchors(ret_anchors)
+
+    def __iter__(self):
+        return iter(self._anchors)
+
+    def __len__(self):
+        return len(self._anchors)
+
+    def __str__(self):
+        ret_str = ''
+        for anchor in self._anchors:
+            ret_str += str(anchor) + '\n'
+        return ret_str
+
+    def translate(self, x=0, y=0, z=0):
+        for anchor in self._anchors:
+            anchor.translate(x,y,z)
+    def rotate(self, x=0, y=0, z=0, degrees=True):
+        for anchor in self._anchors:
+            anchor.rotate(x,y,z,degrees)
+
+# sublcasses can be specific shapes that automatically load bare points and assign the names automatcially
+class CubicAnchors(Anchors):
+    # point_list in the form of ((x,y,z),(x,y,z),(x,y,z))
+    def __init__(point_list):
+        # sort points and assign faces to each point
+        # convert into standard points then call super
+        faced_points = []
+        super(CubicAnchors, self).__init__(faced_points)
+

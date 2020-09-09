@@ -288,21 +288,21 @@ class Anchors():
             anchor.rotate(x,y,z,degrees)
 
 # sublcasses can be specific shapes that automatically load bare points and assign the names automatcially
-class CubicAnchors(Anchors):
-        # assumes a volume. No more than 4 corners should be in plane or behavior is undefined
-        """
-        sorted corner ordering
-           3-------7
-          /|      /|
-         / |     / | Z
-        2--|----6  |
-        |  1----|--5
-        | /     | / Y
-        0-------4
-            X
-        """
+class CuboidAnchors(Anchors):
+    # assumes a volume. No more than 4 corners should be in plane or behavior is undefined
+    """
+    sorted corner ordering
+       3-------7
+      /|      /|
+     / |     / | Z
+    2--|----6  |
+    |  1----|--5
+    | /     | / Y
+    0-------4
+        X
+    """
     # point_list in the form of ((x,y,z),(x,y,z),(x,y,z))
-    def __init__(corners_list):
+    def __init__(self, corners_list):
         # sort points and assign faces to each point
         # convert into standard points then call super
         assert(len(corners_list) == 8)
@@ -315,7 +315,7 @@ class CubicAnchors(Anchors):
                         (corners_list[5], ('bottom', 'right', 'front')),
                         (corners_list[6], ('top', 'right', 'back')),
                         (corners_list[7], ('top', 'right', 'front'))]
-        super(CubicAnchors, self).__init__(corner_faces)
+        super(CuboidAnchors, self).__init__(corner_faces)
 
     def _sort_corners(self, corners):
         assert len(corners) == 8

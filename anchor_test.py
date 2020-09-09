@@ -1,5 +1,5 @@
 
-from keebgen.geometry_base import Anchors
+from keebgen.geometry_base import Anchors, CuboidAnchors
 from keebgen.connector import Connector
 
 cube_input_corners = [
@@ -33,6 +33,7 @@ for x,y,z in cube_anchors:
 cube_connector = Connector(cube_anchors)
 cube_connector.to_file('anchor_cube.scad')
 
+#############################################
 # Anchor is now an object, so its possible to modify in place.
 # Connector class has been modified to use Anchors() class,
 # now the Connector will move and scale with the Anchors object as needed
@@ -45,3 +46,13 @@ for anchor in cube_anchors:
 
 # cube_connector was not modified, but will be scaled with the cube_anchors that were passed in to construct it
 cube_connector.to_file('scaled_anchor_cube.scad')
+
+
+
+######## make cuboid shaped anchors without all of the corners definitions
+# cube_corners can be unsorted list of corner coordinates for a cube-like shape len=8
+cube_corners = [ (0, -3, 0), (15, 0, 0), (11, 13, 0), (0, 8, 0),
+                 (0, -8, 12), (12, 0, 8), (15, 12, 10), (0, 11, 10) ]
+cuboid_anchors = CuboidAnchors(cube_corners)
+Connector(cuboid_anchors).to_file('cuboid_anchors.scad')
+

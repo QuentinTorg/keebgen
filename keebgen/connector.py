@@ -4,7 +4,7 @@ import numpy as np
 from collections import Iterable
 
 from . import geometry_utils as utils
-from .geometry_base import Solid, Hull
+from .geometry_base import Solid, Hull, Anchors
 
 # if the passed object is a 3D point, return it as a list where the only element is that point
 # important for proper iteration
@@ -35,15 +35,26 @@ def _make_spheres(geo):
 class Connector(Solid):
     def __init__(self, *args):
         super(Connector, self).__init__()
-        # using hull around tiny spheres is a hack, but whatever. saves a ton of code
-        spheres = []
-        for points in args:
-            spheres += _make_spheres(points)
-        # make sure we didn't end up with zero points
-        assert len(spheres) > 0
-        self._solid = sl.hull()(*spheres)
 
-    def anchors():
+        # accumulate args into an achor points list that can be used to construct an Anchors object
+        accumulated_anchor_points = []
+        for anchors in args:
+            if isinstance(anchors, Anchors) or isinstance(anchors, Anchors.Anchor):
+                accumulated_anchor_points.append(anchors)
+            else:
+                points = _sanitize_points(anchors)
+                accumulated_anchor_points += [[[x],[]] for x in points]
+        self._new_style_anchors = Anchors(accumulated_anchor_points)
+
+    def solid(self):
+        # using hull around tiny spheres is a hack, but whatever. saves a ton of code
+        spheres = _make_spheres(self._new_style_anchors)
+        # make sure we didn't end up with zero points
+        # we may want to adjust this functionality later and just return solid.part() for empty connectors
+        assert len(spheres) > 0
+        return sl.hull()(*spheres)
+
+    def anchors(self):
         # a connector is not guarenteed to have cubic form, so it is not safe to use anchors
         # also, each connector should connect existing geometry that has its own anchors
         raise Exception('Connectors do not have anchors becuase they are tied to the geometry of other parts')

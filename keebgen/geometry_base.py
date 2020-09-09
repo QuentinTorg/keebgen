@@ -238,9 +238,20 @@ class Anchors():
         self._anchors = [];
         # points come in as a collection of elements
         # each element has the form ((x,y,z), ('facenameA', 'facenameB'))
+
+        # points can be an Anchors object,
+        # or a list of any combination of Anchors, Anchor, and (point,names) tuples
         for point in points:
-            assert(len(point) == 2)
-            self._anchors.append(self.Anchor(point[0], point[1]))
+            # add anchor references to maintain link
+            if isinstance(point, Anchors):
+                for anchor in point._anchors:
+                    self._anchors.append(anchor)
+            elif isinstance(point, Anchors.Anchor):
+                self._anchors.append(point)
+            else:
+                # point was not anchor, must be a point/face tuple
+                assert(len(point) == 2)
+                self._anchors.append(Anchors.Anchor(point[0], point[1]))
 
     # this could be replaced with a function called anchors() or similar
     # when anchor is called, return new Anchor that contains only points with specified faces
@@ -261,8 +272,12 @@ class Anchors():
 
     def __str__(self):
         ret_str = ''
+        first = True
         for anchor in self._anchors:
-            ret_str += str(anchor) + '\n'
+            if not first:
+                ret_str += '\n'
+            first = False
+            ret_str += str(anchor)
         return ret_str
 
     def translate(self, x=0, y=0, z=0):

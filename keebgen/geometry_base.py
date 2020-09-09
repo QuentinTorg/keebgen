@@ -289,10 +289,53 @@ class Anchors():
 
 # sublcasses can be specific shapes that automatically load bare points and assign the names automatcially
 class CubicAnchors(Anchors):
+        # assumes a volume. No more than 4 corners should be in plane or behavior is undefined
+        """
+        sorted corner ordering
+           3-------7
+          /|      /|
+         / |     / | Z
+        2--|----6  |
+        |  1----|--5
+        | /     | / Y
+        0-------4
+            X
+        """
     # point_list in the form of ((x,y,z),(x,y,z),(x,y,z))
-    def __init__(point_list):
+    def __init__(corners_list):
         # sort points and assign faces to each point
         # convert into standard points then call super
-        faced_points = []
-        super(CubicAnchors, self).__init__(faced_points)
+        assert(len(corners_list) == 8)
+        corners_list = self._sort_corners(corners_list)
+        corner_faces = [(corners_list[0], ('bottom', 'left', 'back')),
+                        (corners_list[1], ('bottom', 'left', 'front')),
+                        (corners_list[2], ('top', 'left', 'back')),
+                        (corners_list[3], ('top', 'left', 'front')),
+                        (corners_list[4], ('bottom', 'right', 'back')),
+                        (corners_list[5], ('bottom', 'right', 'front')),
+                        (corners_list[6], ('top', 'right', 'back')),
+                        (corners_list[7], ('top', 'right', 'front'))]
+        super(CubicAnchors, self).__init__(corner_faces)
 
+    def _sort_corners(self, corners):
+        assert len(corners) == 8
+        top_corners = sorted(corners, key = lambda x: x[2])[:4]
+        bottom_corners = sorted(corners, key = lambda x: x[2], reverse=True)[:4]
+        front_top_corners = sorted(top_corners, key = lambda x: x[1])[:2]
+        back_top_corners = sorted(top_corners, key = lambda x: x[1], reverse=True)[:2]
+        front_bottom_corners = sorted(bottom_corners, key = lambda x: x[1])[:2]
+        back_bottom_corners = sorted(bottom_corners, key = lambda x: x[1], reverse=True)[:2]
+
+        # sorted corners match indices in __init__ ascii art
+        sorted_corners = []
+        # left
+        sorted_corners.append(sorted(back_bottom_corners, key=lambda x: x[0])[0])
+        sorted_corners.append(sorted(front_bottom_corners, key=lambda x: x[0])[0])
+        sorted_corners.append(sorted(back_top_corners, key=lambda x: x[0])[0])
+        sorted_corners.append(sorted(front_top_corners, key=lambda x: x[0])[0])
+        # right
+        sorted_corners.append(sorted(back_bottom_corners, key=lambda x: x[0])[1])
+        sorted_corners.append(sorted(front_bottom_corners, key=lambda x: x[0])[1])
+        sorted_corners.append(sorted(back_top_corners, key=lambda x: x[0])[1])
+        sorted_corners.append(sorted(front_top_corners, key=lambda x: x[0])[1])
+        return sorted_corners

@@ -1,10 +1,10 @@
-from abc import abstractmethod
+from better_abc import abstractmethod
 import numpy as np
 import solid as sl
 
-from .geometry_base import Assembly, Hull
+from .geometry_base import Assembly, PartCollection, CuboidAnchorCollection
 from . import geometry_utils as utils
-from . import key_assy
+from .key_assy import FaceAlignedKey
 from .connector import Connector
 
 class KeyColumn(Assembly):
@@ -15,6 +15,7 @@ class KeyColumn(Assembly):
 class ConcaveOrtholinearColumn(KeyColumn):
     def __init__(self, config, key_config, socket_config):
         super(ConcaveOrtholinearColumn, self).__init__()
+        self._parts = PartCollection()
 
         radius = config.getfloat('radius')
         gap = config.getfloat('key_gap')
@@ -24,8 +25,6 @@ class ConcaveOrtholinearColumn(KeyColumn):
         home_angle = config.getfloat('home_tiltback_angle')
 
         prev_anchors = None
-        first_key_name = None
-        last_key_name = None
         for i in range(num_keys):
             r = 4-i + (home_index-1)
             rotation_index = i - home_index
@@ -36,20 +35,17 @@ class ConcaveOrtholinearColumn(KeyColumn):
 
             # for alignment across rows, name keys by index from the home row. negative is below home
             key_name = rotation_index
-            if first_key_name is None:
-                first_key_name = key_name
-            last_key_name = key_name
 
 
             # add a key_assy to the parts
-            self._parts.add(key_assy.FaceAlignedKey(key_config, socket_config, r), key_name)
+            self._parts.add(FaceAlignedKey(key_config, socket_config, r), key_name)
             self._parts.rotate(0, key_lean, 0, name=key_name)
             self._parts.translate(0, 0, -radius, name=key_name)
 
             # get y values from top face of the key
-            anchors = self.anchors(key_name)
-            center_top_front_anchor = utils.mean_point(anchors.top() & anchors.front())
-            center_top_back_anchor = utils.mean_point(anchors.top() & anchors.back())
+            anchors = self.anchors_by_part(key_name)
+            center_top_front_anchor = utils.mean_point(anchors['top', 'front'].coords)
+            center_top_back_anchor = utils.mean_point(anchors['top', 'back'].coords)
             y_front = center_top_front_anchor[1]
             y_back = center_top_back_anchor[1]
 
@@ -61,10 +57,13 @@ class ConcaveOrtholinearColumn(KeyColumn):
             self._parts.translate(0, 0, radius, name=key_name)
 
             if prev_anchors is not None:
-                self._parts.add(Connector(self.get_part(key_name).anchors('socket').back(), prev_anchors))
+                connector = Connector(prev_anchors + self.get_part(key_name).anchors_by_part('socket')['back'])
+                self._parts.add(connector)
 
             # remember where to connect the next key
-            prev_anchors = self.get_part(key_name).anchors('socket').front()
+            prev_anchors = self.get_part(key_name).anchors_by_part('socket')['front']
 
-        self._anchors = Hull(self.get_part(first_key_name).anchors('socket').back() | self.get_part(last_key_name).anchors('socket').front())
+        first_anchors = self._parts[0].anchors_by_part('socket')
+        self._anchors = CuboidAnchorCollection.copy_from(first_anchors['back'] + prev_anchors)
+
         self.rotate(home_angle, 0, 0, degrees=True)

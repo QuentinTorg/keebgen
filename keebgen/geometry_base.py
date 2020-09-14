@@ -1,32 +1,17 @@
-from abc import ABC, abstractmethod
+from __future__ import annotations # for https://www.python.org/dev/peps/pep-0563/
+from better_abc import BetterABCMeta, abstractmethod, abstractattribute
 import solid as sl
 import numpy as np
-from functools import partialmethod
+import itertools
 
 from . import geometry_utils as utils
 
 # base class for all solids
-class Solid(ABC):
-    @abstractmethod
-    def __init__(self):
-        # check if defined
-        try:
-            self._anchors
-        except AttributeError:
-            # not defined
-            # define arbitrary anchors for compatibility
-            self._anchors = Hull(((0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0),
-                                  (0, 0, 1), (1, 0, 1), (1, 1, 1), (0, 1, 1)))
-        # check if defined
-        try:
-            self._solid
-        except AttributeError:
-            # not defined
-            # define arbitrary solid for compatibility
-            self._solid = sl.part()
+class Solid(metaclass=BetterABCMeta):
+    _solid = abstractattribute()
+    _anchors = abstractattribute()
 
-
-    # child __init__() functions responsible for populating self._solid and self._anchors
+    # child __init__() functions responsible for populating self._solid and self.anchors
     def solid(self):
         return self._solid
 
@@ -42,6 +27,7 @@ class Solid(ABC):
         self._solid = sl.rotate([x, y, z])(self._solid)
         self._anchors.rotate(x,y,z)
 
+
     def anchors(self):
         return self._anchors
 
@@ -49,102 +35,201 @@ class Solid(ABC):
         sl.scad_render_to_file(self.solid(), file_name)
 
 
-class Assembly(ABC):
-    class PartCollection:
-        def __init__(self):
-            self._part_list = []
-            self._index_lookup = {}
-
-        def add(self, part, name=None):
-            # if name provided, track index
-            if name is not None:
-                if name in self._index_lookup:
-                    raise Exception(str(name)+'already in this PartCollection')
-                self._index_lookup[name] = len(self._part_list)
-            self._part_list.append(part)
-
-        def get(self, name):
-            if name in self._index_lookup:
-                return self._part_list[self._index_lookup[name]]
-            return None
-
-        def solid(self):
-            solids = sl.part()
-            for part in self._part_list:
-                solids += part.solid()
-            return solids
-
-        def translate(self, x=0, y=0, z=0, name=None):
-            # return specific part
-            if name is not None:
-                self.get(name).translate(x,y,z)
-                return
-            # no part specified, translate all parts
-            for part in self._part_list:
-                part.translate(x,y,z)
-
-        def rotate(self, x=0, y=0, z=0, degrees=True, name=None):
-            # return specific part
-            if name is not None:
-                self.get(name).rotate(x,y,z,degrees)
-                return
-            # no part specified, rotate all parts
-            for part in self._part_list:
-                part.rotate(x, y, z, degrees)
-
-    @abstractmethod
+class PartCollection:
     def __init__(self):
-        # check if defined
-        try:
-            self._parts
-        except AttributeError:
-            # not defined
-            # define arbitrary solid for compatibility
-            self._parts = self.PartCollection()
+        self._part_list = []
+        self._index_lookup = {}
 
-        # check if defined
-        try:
-            self._anchors
-        except AttributeError:
-            # not defined
-            # define arbitrary anchors for compatibility
-            self._anchors = Hull(((0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0),
-                                  (0, 0, 1), (1, 0, 1), (1, 1, 1), (0, 1, 1)))
+    def add(self, part: Solid, name=None):
+        # if name provided, track index
+        if name is not None:
+            if name in self._index_lookup:
+                raise KeyError(f'Name "{name}" is already in this PartCollection.')
+            self._index_lookup[name] = len(self._part_list)
+        self._part_list.append(part)
+
+    def get(self, name) -> Union[Solid, Assembly]:
+        if name in self._index_lookup:
+            return self._part_list[self._index_lookup[name]]
+        raise KeyError(f'Name "{name}" could not be found.')
+
+    def __getitem__(self, idx):
+        return self._part_list[idx]
+
+    def solid(self):
+        solids = sl.part()
+        for part in self._part_list:
+            solids += part.solid()
+        return solids
+
+    def translate(self, x=0, y=0, z=0, name=None):
+        # return specific part
+        if name is not None:
+            self.get(name).translate(x,y,z)
+            return
+        # no part specified, translate all parts
+        for part in self._part_list:
+            part.translate(x,y,z)
+
+    def rotate(self, x=0, y=0, z=0, degrees=True, name=None):
+        # return specific part
+        if name is not None:
+            self.get(name).rotate(x,y,z,degrees)
+            return
+        # no part specified, rotate all parts
+        for part in self._part_list:
+            part.rotate(x, y, z, degrees)
+
+class Assembly(Solid):
+    _parts: PartCollection = abstractattribute()
+    _anchors = abstractattribute()
+
+    def __init__(self):
+        # This is purposefully left as None to bypass Solids abstractattribute.
+        # It should be required, but this is an exception.
+        self._solid = None
 
     # child __init__() functions responsible for populating self._parts and self._anchors
     def solid(self):
         return self._parts.solid()
 
     def translate(self, x=0, y=0, z=0):
-        self._anchors.translate(x,y,z)
-        self._parts.translate(x,y,z)
+        self._anchors.translate(x, y, z)
+        self._parts.translate(x, y, z)
 
     def rotate(self, x=0, y=0, z=0, degrees=True):
         self._anchors.rotate(x, y, z, degrees)
-        self._parts.rotate(x,y,z, degrees)
+        self._parts.rotate(x, y, z, degrees)
 
-    def anchors(self, part_name=None):
-        # return assembly anchors if no part specified
-        if part_name == None:
-            return self._anchors
-        # return the anchors of the requested part
+    def anchors_by_part(self, part_name):
+        """Returns the anchors of the requested part"""
         if self._parts.get(part_name):
             return self._parts.get(part_name).anchors()
-        return None
+
+        raise KeyError(f'Part name "{part_name}" could not be found.')
 
     def get_part(self, part_name):
         return self._parts.get(part_name)
 
-    def to_file(self, file_name):
-        sl.scad_render_to_file(self.solid(), file_name)
+
+from typing import Sequence, Union, Set
+
+class LabeledPoint:
+    """A 3D point with one or more labels"""
+    def __init__(self, coords: Sequence[float], labels: Union[Sequence[str], Set[str]]):
+        assert len(coords) == 3
+        self.coords = coords
+        self.labels = set(labels)
+
+    def translate(self, x=0, y=0, z=0):
+        self.coords = utils.translate_point(self.coords, (x,y,z))
+
+    def rotate(self, x=0, y=0, z=0, degrees=True):
+        self.coords = utils.rotate_point(self.coords, (x,y,z), degrees)
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}: coords: {self.coords}, labels: {self.labels}"
 
 
-# top, bottom, left, right are relative to the user sitting at the keyboard
-class Hull(object):
-    def __init__(self, corners):
-        # assumes a volume. No more than 4 corners should be in plane or behavior is undefined
+class AnchorCollection:
+    """A container for LabeledPoints"""
+    def __init__(self, points: Sequence[LabeledPoint]):
+        self.labeled_points = list(points)
+
+    @staticmethod
+    def copy_from(other: AnchorCollection):
+        copies = [LabeledPoint(list(x.coords), x.labels) for x in other.labeled_points]
+        return AnchorCollection(copies)
+
+
+    def __getitem__(self, labels):
+        """Gets points by one or more labels"""
+        if isinstance(labels, str):
+            labels = {labels}
+        else:
+            labels = set(labels)
+
+        points = [p for p in self.labeled_points if p.labels.issuperset(labels)]
+        return AnchorCollection(points)
+
+    def __iter__(self):
+        return iter(self.labeled_points)
+
+    def __len__(self):
+        return len(self.labeled_points)
+
+    def __add__(self, other):
+        return AnchorCollection(self.labeled_points + other.labeled_points)
+
+    def __radd__(self, other): # So `sum` can be used
+        if other == 0:
+            return AnchorCollection(self.labeled_points)
+        return AnchorCollection(other.labeled_points + self.labeled_points)
+
+    @property
+    def coords(self):
+        return [x.coords for x in self.labeled_points]
+
+    def translate(self, x=0, y=0, z=0):
+        for point in self.labeled_points:
+            point.translate(x,y,z)
+
+    def rotate(self, x=0, y=0, z=0, degrees=True):
+        for point in self.labeled_points:
+            point.rotate(x,y,z,degrees)
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}: {self.labeled_points}"
+
+
+class CuboidAnchorCollection(AnchorCollection):
+    def __init__(self, corner_coords: Union[AnchorCollection, Sequence[Sequence[float]]]):
         """
-        sorted corner ordering
+        A LabeledPoint container specialized for six-sided shapes.
+
+        :param corner_coords: An AnchorCollection or a list of 3D points. If an AnchorCollection
+            is used, any existing labels will be lost.
+        """
+        assert len(corner_coords) == 8
+        if isinstance(corner_coords, AnchorCollection):
+            corner_coords = [x.coords for x in corner_coords]
+
+        corner_coords = self._sort_coords(corner_coords)
+        labels = self._create_labels()
+        labeled_points = [LabeledPoint(c,l) for c,l in zip(corner_coords, labels)]
+        super(CuboidAnchorCollection, self).__init__(labeled_points)
+
+    @staticmethod
+    def create(dims=(1,1,1), offset=(0,0,0)):
+        """
+        Creates a CuboidAnchorCollection based on the input dimensions.
+
+        :param dims: Desired dimensions in (x,y,z)
+        :param offset: Desired offset in (x,y,z)
+        :return: CuboidAnchorCollection
+        """
+        corners = sorted(itertools.product([1., -1.], repeat=3))
+        corners = np.array(corners) * np.array(dims) / 2.
+        return CuboidAnchorCollection(corners + offset)
+
+    @staticmethod
+    def _sort_coords(coords) -> np.ndarray:
+        coords = np.array(coords).reshape((8,3))
+        originals = coords.copy()
+        # move coords so that the origin is within the cuboid
+        coords -= np.mean(coords, axis=0)
+
+        # Sort the coords based on which side of the origin they fall on
+        b = coords > 0 # b for binary mask
+        idxs = np.lexsort((b[:, 2], b[:, 1], b[:, 0]))
+        return originals[idxs]
+
+    @staticmethod
+    def _create_labels():
+        """
+        Creates an array of label sets. Assumes the same order as `_sort_coords`
+        which is based on the diagram below:
+
            3-------7
           /|      /|
          / |     / | Z
@@ -154,193 +239,19 @@ class Hull(object):
         0-------4
             X
         """
-        assert len(corners) == 8
-        self.corners = np.array(self._sort_corners(corners)).reshape((2,2,2,3))
-        self._output_shape = (4,3)
 
-    def _sort_corners(self, corners):
-        assert len(corners) == 8
-        top_corners = sorted(corners, key = lambda x: x[2])[:4]
-        bottom_corners = sorted(corners, key = lambda x: x[2], reverse=True)[:4]
-        front_top_corners = sorted(top_corners, key = lambda x: x[1])[:2]
-        back_top_corners = sorted(top_corners, key = lambda x: x[1], reverse=True)[:2]
-        front_bottom_corners = sorted(bottom_corners, key = lambda x: x[1])[:2]
-        back_bottom_corners = sorted(bottom_corners, key = lambda x: x[1], reverse=True)[:2]
+        # create a 2x2x2 cube of sets
+        labels = np.array([set() for _ in range(8)]).reshape((2, 2, 2))
 
-        # sorted corners match indices in __init__ ascii art
-        sorted_corners = []
-        # left
-        sorted_corners.append(sorted(back_bottom_corners, key=lambda x: x[0])[0])
-        sorted_corners.append(sorted(front_bottom_corners, key=lambda x: x[0])[0])
-        sorted_corners.append(sorted(back_top_corners, key=lambda x: x[0])[0])
-        sorted_corners.append(sorted(front_top_corners, key=lambda x: x[0])[0])
-        # right
-        sorted_corners.append(sorted(back_bottom_corners, key=lambda x: x[0])[1])
-        sorted_corners.append(sorted(front_bottom_corners, key=lambda x: x[0])[1])
-        sorted_corners.append(sorted(back_top_corners, key=lambda x: x[0])[1])
-        sorted_corners.append(sorted(front_top_corners, key=lambda x: x[0])[1])
-        return sorted_corners
+        def add(arr, item):
+            [x.add(item) for x in arr.flatten()]
 
-    def _get_side(self, slice):
-        coords =  self.corners[slice].reshape(self._output_shape)
-        return set(tuple(x) for x in coords)
+        # top, bottom, left, right are relative to the user sitting at the keyboard
+        add(labels[0, :, :], 'left')
+        add(labels[1, :, :], 'right')
+        add(labels[:, 0, :], 'back')
+        add(labels[:, 1, :], 'front') #TODO: back/front are reversed. Need to fix this and the downstream effects.
+        add(labels[:, :, 0], 'bottom')
+        add(labels[:, :, 1], 'top')
+        return labels.flatten()
 
-    def translate(self, x=0, y=0, z=0):
-        for i in range(len(self.corners)):
-            for j in range(len(self.corners[i])):
-                for k in range(len(self.corners[i][j])):
-                    self.corners[i,j,k] = utils.translate_point(self.corners[i,j,k], (x,y,z))
-
-    def rotate(self, x=0, y=0, z=0, degrees=True):
-        for i in range(len(self.corners)):
-            for j in range(len(self.corners[i])):
-                for k in range(len(self.corners[i][j])):
-                    self.corners[i,j,k] = np.array(utils.rotate_point(self.corners[i,j,k], (x,y,z), degrees))
-
-    right  = partialmethod(_get_side, np.s_[1,:,:])
-    left   = partialmethod(_get_side, np.s_[0,:,:])
-    bottom    = partialmethod(_get_side, np.s_[:,1,:])
-    top = partialmethod(_get_side, np.s_[:,0,:])
-    back  = partialmethod(_get_side, np.s_[:,:,1])
-    front = partialmethod(_get_side, np.s_[:,:,0])
-
-# proposed replacement for Hull class
-class Anchors():
-    # subclass to represent each point
-    class Anchor():
-        def __init__(self, point, faces):
-            assert(len(point) == 3)
-            self.point = point
-            self.faces = set()
-            for face in faces:
-                self.faces.add(face)
-
-        # makes points behave as though it is a list of points
-        def __iter__(self):
-            return iter(self.point)
-
-        def __len__(self):
-            return len(self.point)
-
-        def __str__(self):
-            return 'point:' + str(self.point) + ' faces:' + str(self.faces)
-
-        # maybe not useful?
-        #def __contains__(self, face):
-        #    # check 'face in self'
-        def translate(self, x=0, y=0, z=0):
-            self.point = utils.translate_point(self.point, (x,y,z))
-        def rotate(self, x=0, y=0, z=0, degrees=True):
-            self.point = utils.rotate_point(self.point, (x,y,z), degrees)
-
-
-    def __init__(self, points):
-        self._anchors = [];
-        # points come in as a collection of elements
-        # each element has the form ((x,y,z), ('facenameA', 'facenameB'))
-
-        # points can be an Anchors object,
-        # or a list of any combination of Anchors, Anchor, and (point,names) tuples
-        for point in points:
-            # add anchor references to maintain link
-            if isinstance(point, Anchors):
-                for anchor in point._anchors:
-                    self._anchors.append(anchor)
-            elif isinstance(point, Anchors.Anchor):
-                self._anchors.append(point)
-            else:
-                # point was not anchor, must be a point/face tuple
-                assert(len(point) == 2)
-                self._anchors.append(Anchors.Anchor(point[0], point[1]))
-
-    # this could be replaced with a function called anchors() or similar
-    # when anchor is called, return new Anchor that contains only points with specified faces
-    # *args is a list of any number of face specifiers, usually strings
-    def __getitem__(self, args):
-        if isinstance(args, str):
-            faces = set()
-            faces.add(args)
-        else:
-            faces = set(args)
-        print(faces)
-        ret_anchors = []
-        for anchor in self._anchors:
-            if len(faces & anchor.faces) == len(faces):
-                ret_anchors.append((anchor.point, anchor.faces))
-        return Anchors(ret_anchors)
-
-    def __iter__(self):
-        return iter(self._anchors)
-
-    def __len__(self):
-        return len(self._anchors)
-
-    def __str__(self):
-        ret_str = ''
-        first = True
-        for anchor in self._anchors:
-            if not first:
-                ret_str += '\n'
-            first = False
-            ret_str += str(anchor)
-        return ret_str
-
-    def translate(self, x=0, y=0, z=0):
-        for anchor in self._anchors:
-            anchor.translate(x,y,z)
-    def rotate(self, x=0, y=0, z=0, degrees=True):
-        for anchor in self._anchors:
-            anchor.rotate(x,y,z,degrees)
-
-# sublcasses can be specific shapes that automatically load bare points and assign the names automatcially
-class CuboidAnchors(Anchors):
-    # assumes a volume. No more than 4 corners should be in plane or behavior is undefined
-    """
-    sorted corner ordering
-       3-------7
-      /|      /|
-     / |     / | Z
-    2--|----6  |
-    |  1----|--5
-    | /     | / Y
-    0-------4
-        X
-    """
-    # point_list in the form of ((x,y,z),(x,y,z),(x,y,z))
-    def __init__(self, corners_list):
-        # sort points and assign faces to each point
-        # convert into standard points then call super
-        assert(len(corners_list) == 8)
-        corners_list = self._sort_corners(corners_list)
-        corner_faces = [(corners_list[0], ('bottom', 'left', 'back')),
-                        (corners_list[1], ('bottom', 'left', 'front')),
-                        (corners_list[2], ('top', 'left', 'back')),
-                        (corners_list[3], ('top', 'left', 'front')),
-                        (corners_list[4], ('bottom', 'right', 'back')),
-                        (corners_list[5], ('bottom', 'right', 'front')),
-                        (corners_list[6], ('top', 'right', 'back')),
-                        (corners_list[7], ('top', 'right', 'front'))]
-        super(CuboidAnchors, self).__init__(corner_faces)
-
-    def _sort_corners(self, corners):
-        assert len(corners) == 8
-        top_corners = sorted(corners, key = lambda x: x[2])[:4]
-        bottom_corners = sorted(corners, key = lambda x: x[2], reverse=True)[:4]
-        front_top_corners = sorted(top_corners, key = lambda x: x[1])[:2]
-        back_top_corners = sorted(top_corners, key = lambda x: x[1], reverse=True)[:2]
-        front_bottom_corners = sorted(bottom_corners, key = lambda x: x[1])[:2]
-        back_bottom_corners = sorted(bottom_corners, key = lambda x: x[1], reverse=True)[:2]
-
-        # sorted corners match indices in __init__ ascii art
-        sorted_corners = []
-        # left
-        sorted_corners.append(sorted(back_bottom_corners, key=lambda x: x[0])[0])
-        sorted_corners.append(sorted(front_bottom_corners, key=lambda x: x[0])[0])
-        sorted_corners.append(sorted(back_top_corners, key=lambda x: x[0])[0])
-        sorted_corners.append(sorted(front_top_corners, key=lambda x: x[0])[0])
-        # right
-        sorted_corners.append(sorted(back_bottom_corners, key=lambda x: x[0])[1])
-        sorted_corners.append(sorted(front_bottom_corners, key=lambda x: x[0])[1])
-        sorted_corners.append(sorted(back_top_corners, key=lambda x: x[0])[1])
-        sorted_corners.append(sorted(front_top_corners, key=lambda x: x[0])[1])
-        return sorted_corners

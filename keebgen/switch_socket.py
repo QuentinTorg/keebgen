@@ -1,8 +1,8 @@
-from abc import ABC, abstractmethod
+from better_abc import ABC, abstractmethod
 import solid as sl
 from pathlib import Path
 
-from keebgen.geometry_base import Solid, Hull
+from keebgen.geometry_base import Solid, CuboidAnchorCollection
 
 # when adding new sockets, the top of the socket should be coplanar with the X,Y plane
 # when the switch is installed, the keycap mounting feature should align with the Z axis
@@ -51,26 +51,14 @@ class CherryMXSocket(Solid):
         if add_hot_swap:
             #TODO: fix the hot swap socket. currently not parameterized
             # missing the stl file in this repo
-            raise Exception('hot swap sockets are not yet implemented')
+            raise NotImplemented('hot swap sockets are not yet implemented')
 
             hot_swap_socket = sl.import_(Path.cwd().parent / "geometry" / "hot_swap_plate.stl")
             hot_swap_socket = sl.translate([0, 0, thickness - 5.25])(hot_swap_socket)
             socket = sl.union()(socket, hot_swap_socket)
 
         self._solid = socket
+        self._anchors = CuboidAnchorCollection.create(dims=(width, length, thickness),
+                                                      offset=(0, 0, -thickness/2))
 
-        # anchors start in top left, then work their way around
-        #
-        top_z = 0.0
-        bottom_z = -thickness
-        half_width = width/2.0
-        half_length = length/2.0
-        # self._anchors must be loaded in this order
-        self._anchors = Hull([[-half_width,  half_length, top_z],
-                              [ half_width,  half_length, top_z],
-                              [ half_width, -half_length, top_z],
-                              [-half_width, -half_length, top_z],
-                              [-half_width,  half_length, bottom_z],
-                              [ half_width,  half_length, bottom_z],
-                              [ half_width, -half_length, bottom_z],
-                              [-half_width, -half_length, bottom_z]])
+

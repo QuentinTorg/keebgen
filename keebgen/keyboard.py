@@ -1,17 +1,17 @@
-from abc import abstractmethod
-from keebgen.geometry_base import Assembly
+from better_abc import abstractmethod
+from .geometry_base import Assembly, PartCollection
 
 # TODO remove this when configs updated
 import configparser
 
-from keebgen.key_column import ConcaveOrtholinearColumn
-from keebgen.connector import Connector
-from keebgen.geometry_base import Hull
+from .key_column import ConcaveOrtholinearColumn
+from .connector import Connector
 
 class Keyboard(Assembly):
     @abstractmethod
     def __init__(self):
         super().__init__()
+        self._parts = PartCollection()
 
 
 class DactylManuform(Keyboard):
@@ -117,15 +117,17 @@ class DactylManuform(Keyboard):
                 prev_col_prev_anchors = None
                 cur_col_prev_anchors = None
                 for row in range(-6, 6):
-                    prev_col_key = prev_col.get_part(row)
-                    cur_col_key = cur_col.get_part(row)
+                    try:
+                        prev_col_key = prev_col.get_part(row)
+                        prev_col_anchors = prev_col_key.anchors_by_part('socket')
+                    except:
+                        prev_col_key = prev_col_anchors = None
 
-                    prev_col_anchors = None
-                    if prev_col_key is not None:
-                        prev_col_anchors = prev_col_key.anchors('socket')
-                    cur_col_anchors = None
-                    if cur_col_key is not None:
-                        cur_col_anchors = cur_col_key.anchors('socket')
+                    try:
+                        cur_col_key = cur_col.get_part(row)
+                        cur_col_anchors = cur_col_key.anchors_by_part('socket')
+                    except:
+                        cur_col_key = cur_col_anchors = None
 
                     # TODO this is really annoying
                     # naming is bad too, "connect connectors"
@@ -133,43 +135,45 @@ class DactylManuform(Keyboard):
                     # normal case, both connectors exist
                     # connect adjacent socket edges
                     if prev_col_anchors and cur_col_anchors:
-                        self._parts.add(Connector( prev_col_anchors.right(), cur_col_anchors.left()))
+                        self._parts.add(Connector(prev_col_anchors['right'] +
+                                                  cur_col_anchors['left']))
+                        # self._parts.add(Connector(prev_col_anchors['bottom']))
+
 
                     # cur and prev rows exist for both cols
                     # connect the connectors that are between the cur and prev rows for each col
                     if prev_col_anchors and prev_col_prev_anchors and cur_col_anchors and cur_col_prev_anchors:
-                        self._parts.add(Connector(
-                                prev_col_anchors.right() & prev_col_anchors.back(),
-                                prev_col_prev_anchors.right() & prev_col_prev_anchors.front(),
-                                cur_col_anchors.left() & cur_col_anchors.back(),
-                                cur_col_prev_anchors.left() & cur_col_prev_anchors.front()))
+                        self._parts.add(Connector(prev_col_anchors['right', 'back'] +
+                                                  prev_col_prev_anchors['right', 'front'] +
+                                                  cur_col_anchors['left', 'back'] +
+                                                  cur_col_prev_anchors['left', 'front']))
 
 
                     # these four conditionals handle the end conditions when one col is shorter than the other
 
                     # prev_col one longer on bottom
                     if prev_col_anchors and prev_col_prev_anchors and cur_col_anchors and not cur_col_prev_anchors:
-                        self._parts.add(Connector(prev_col_anchors.right() & prev_col_anchors.back(),
-                                                  prev_col_prev_anchors.right(),
-                                                  cur_col_anchors.left() & cur_col_anchors.back()))
+                        self._parts.add(Connector(prev_col_anchors['right', 'back'] +
+                                                 prev_col_prev_anchors['right'] +
+                                                 cur_col_anchors['left', 'back']))
 
                     # cur_col one longer on bottom
                     if prev_col_anchors and not prev_col_prev_anchors and cur_col_anchors and cur_col_prev_anchors:
-                        self._parts.add(Connector(prev_col_anchors.right() & prev_col_anchors.bottom(),
-                                                  cur_col_anchors.left() & cur_col_anchors.bottom(),
-                                                  cur_col_prev_anchors.left()))
+                        self._parts.add(Connector(prev_col_anchors['right', 'bottom'] +
+                                                 cur_col_anchors['left', 'bottom'] +
+                                                 cur_col_prev_anchors['left']))
 
                     # prev_col one longer on top
                     if prev_col_anchors and prev_col_prev_anchors and not cur_col_anchors and cur_col_prev_anchors:
-                        self._parts.add(Connector(prev_col_anchors.right(),
-                                                  prev_col_prev_anchors.right() & prev_col_prev_anchors.front(),
-                                                  cur_col_prev_anchors.left() & cur_col_prev_anchors.front()))
+                        self._parts.add(Connector(prev_col_anchors['right'] +
+                                                 prev_col_prev_anchors['right', 'front'] +
+                                                 cur_col_prev_anchors['left', 'front']))
 
                     # cur_col one longer on top
                     if not prev_col_anchors and prev_col_prev_anchors and cur_col_anchors and cur_col_prev_anchors:
-                        self._parts.add(Connector(prev_col_prev_anchors.right() & prev_col_prev_anchors.front(),
-                                                  cur_col_anchors.left(),
-                                                  cur_col_prev_anchors.left() & cur_col_prev_anchors.front()))
+                        self._parts.add(Connector(prev_col_prev_anchors['right', 'front'] +
+                                                 cur_col_anchors['left'] +
+                                                 cur_col_prev_anchors['left', 'front']))
 
 
 
@@ -185,4 +189,4 @@ class DactylManuform(Keyboard):
 #        colum
 #
 #        #TODO: add everything
-
+        self._anchors = None

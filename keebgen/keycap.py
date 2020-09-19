@@ -1,28 +1,27 @@
-from abc import abstractmethod
 import numpy as np
 import solid as sl
 
-from .geometry_base import Solid, Hull
+from .geometry_base import Part, CuboidAnchorCollection
 from . import geometry_utils as utils
 
 # when adding new keycaps, they should be oriented so the mounting feature is aligned with the Z axis
 # the bottom face should be offset from the XY plane by the same distance that they would be offset from
 # a mounting plate if they were plate mounted switches
-class Keycap(Solid):
+class Keycap(Part):
     def __init__(self):
-        super(Keycap, self).__init__()
+        super().__init__()
 
     def solid(self):
         return self._solid.set_modifier('%')
 
 class OEM(Keycap):
     def __init__(self, r, u=1):
-        super(OEM, self).__init__()
+        super().__init__()
         key_pitch = 19.0 # width between keys on standard board
 
         vertical_offset = 5.5 # vertical height from plate mount when mounted on switch
-        bottom_width = 18.0 + key_pitch * (u-1);
-        bottom_length = 18.0;
+        bottom_width = 18.0 + key_pitch * (u-1)
+        bottom_length = 18.0
 
         top_width = 12.5 + key_pitch * (u-1)
         top_length = 14.5
@@ -58,7 +57,7 @@ class OEM(Keycap):
             raise Exception('OEM Keycap R value out of range:' + str(r))
 
         top_offset_front = top_front_height * np.tan(front_tiltback_angle)
-        top_face_angle = utils.rad2deg(np.arcsin((top_front_height - top_back_height) / top_length));
+        top_face_angle = utils.rad2deg(np.arcsin((top_front_height - top_back_height) / top_length))
 
         bottom_corners = [[-bottom_width/2, 0, 0], # front left
                           [ bottom_width/2, 0, 0],  # front right
@@ -96,4 +95,4 @@ class OEM(Keycap):
 
         # setting the % modifier makes it render visually in openscad, but not when exporting to stl
         self._solid = key_cap
-        self._anchors = Hull(corners)
+        self._anchors = CuboidAnchorCollection(corners)

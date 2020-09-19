@@ -1,5 +1,5 @@
 from __future__ import annotations # for https://www.python.org/dev/peps/pep-0563/
-from better_abc import BetterABCMeta, abstractmethod, abstractattribute
+from keebgen.better_abc import BetterABCMeta, abstractmethod, abstractattribute
 import solid as sl
 import numpy as np
 import itertools
@@ -7,7 +7,7 @@ import itertools
 from . import geometry_utils as utils
 
 # base class for all solids
-class Solid(metaclass=BetterABCMeta):
+class Part(metaclass=BetterABCMeta):
     _solid = abstractattribute()
     _anchors = abstractattribute()
 
@@ -40,7 +40,7 @@ class PartCollection:
         self._part_list = []
         self._index_lookup = {}
 
-    def add(self, part: Solid, name=None):
+    def add(self, part: Part, name=None):
         # if name provided, track index
         if name is not None:
             if name in self._index_lookup:
@@ -48,7 +48,7 @@ class PartCollection:
             self._index_lookup[name] = len(self._part_list)
         self._part_list.append(part)
 
-    def get(self, name) -> Union[Solid, Assembly]:
+    def get(self, name) -> Union[Part, Assembly]:
         if name in self._index_lookup:
             return self._part_list[self._index_lookup[name]]
         raise KeyError(f'Name "{name}" could not be found.')
@@ -80,12 +80,12 @@ class PartCollection:
         for part in self._part_list:
             part.rotate(x, y, z, degrees)
 
-class Assembly(Solid):
+class Assembly(Part):
     _parts: PartCollection = abstractattribute()
     _anchors = abstractattribute()
 
     def __init__(self):
-        # This is purposefully left as None to bypass Solids abstractattribute.
+        # This is purposefully left as None to bypass Part's abstractattribute.
         # It should be required, but this is an exception.
         self._solid = None
 
@@ -101,7 +101,7 @@ class Assembly(Solid):
         self._anchors.rotate(x, y, z, degrees)
         self._parts.rotate(x, y, z, degrees)
 
-    def anchors_by_part(self, part_name):
+    def anchors_by_part(self, part_name) -> AnchorCollection:
         """Returns the anchors of the requested part"""
         if self._parts.get(part_name):
             return self._parts.get(part_name).anchors()
@@ -112,7 +112,7 @@ class Assembly(Solid):
         return self._parts.get(part_name)
 
 
-from typing import Sequence, Union, Set
+from typing import Sequence, Union, Set, Iterable
 
 class LabeledPoint:
     """A 3D point with one or more labels"""
@@ -133,14 +133,13 @@ class LabeledPoint:
 
 class AnchorCollection:
     """A container for LabeledPoints"""
-    def __init__(self, points: Sequence[LabeledPoint]):
+    def __init__(self, points: Iterable[LabeledPoint]):
         self.labeled_points = list(points)
 
     @staticmethod
     def copy_from(other: AnchorCollection):
         copies = [LabeledPoint(list(x.coords), x.labels) for x in other.labeled_points]
         return AnchorCollection(copies)
-
 
     def __getitem__(self, labels):
         """Gets points by one or more labels"""
@@ -197,7 +196,7 @@ class CuboidAnchorCollection(AnchorCollection):
         corner_coords = self._sort_coords(corner_coords)
         labels = self._create_labels()
         labeled_points = [LabeledPoint(c,l) for c,l in zip(corner_coords, labels)]
-        super(CuboidAnchorCollection, self).__init__(labeled_points)
+        super().__init__(labeled_points)
 
     @staticmethod
     def create(dims=(1,1,1), offset=(0,0,0)):
@@ -225,9 +224,9 @@ class CuboidAnchorCollection(AnchorCollection):
         return originals[idxs]
 
     @staticmethod
-    def _create_labels():
+    def _create_labels() -> np.ndarray[Set[str]]:
         """
-        Creates an array of label sets. Assumes the same order as `_sort_coords`
+        Returns an array of label sets. Assumes the same order as `_sort_coords`
         which is based on the diagram below:
 
            3-------7
@@ -250,7 +249,7 @@ class CuboidAnchorCollection(AnchorCollection):
         add(labels[0, :, :], 'left')
         add(labels[1, :, :], 'right')
         add(labels[:, 0, :], 'back')
-        add(labels[:, 1, :], 'front') #TODO: back/front are reversed. Need to fix this and the downstream effects.
+        add(labels[:, 1, :], 'front')
         add(labels[:, :, 0], 'bottom')
         add(labels[:, :, 1], 'top')
         return labels.flatten()

@@ -1,12 +1,11 @@
-from better_abc import abstractmethod
-import solid as sl
+from keebgen.better_abc import abstractmethod
 import numpy as np
 
 from .geometry_base import Assembly, CuboidAnchorCollection, PartCollection
 from . import geometry_utils as utils
 from . import switch_socket
 from . import keycap
-from .connector import Connector
+
 
 # different Key subclasses will exist depending on the desired alignment
 # alignment is driven by where the anchor points are placed
@@ -17,7 +16,7 @@ class KeyAssy(Assembly):
     # TODO the config shoud have the socket_config nested within it eventaully
     @abstractmethod
     def __init__(self, config, socket_config, r, u=1):
-        super(KeyAssy, self).__init__()
+        super().__init__()
         self._parts = PartCollection()
 
         # this will hold all parts of the key
@@ -40,7 +39,7 @@ class KeyAssy(Assembly):
 # FaceAlignedKeys will have the faces forming a smooth curve on the keybaord regardless of switch and keycap type
 class FaceAlignedKey(KeyAssy):
     def __init__(self, config, socket_config, r, u=1):
-        super(FaceAlignedKey, self).__init__(config, socket_config, r, u)
+        super().__init__(config, socket_config, r, u)
         # set the assembly corner anchors to top of the socket
 
         # reorient the key and switch together so the top face of the keycap is centered
@@ -49,7 +48,7 @@ class FaceAlignedKey(KeyAssy):
 
         # center front and center back anchors
         cf_anchor = utils.mean_point(self._anchors['top', 'front'].coords)
-        cb_anchor = utils.mean_point(self._anchors['top', 'back'].coords)
+        cb_anchor = utils.mean_point(self._anchors['top',  'back'].coords)
 
         # how far to tilt keys in x axis to make them flat
         tiltback_angle = np.arctan((cb_anchor[2] - cf_anchor[2] ) / abs(cf_anchor[1] - cb_anchor[1]))
@@ -60,7 +59,7 @@ class FaceAlignedKey(KeyAssy):
 
         # top right and top left anchors
         cr_anchor = utils.mean_point(self._anchors['top', 'right'].coords)
-        cl_anchor = utils.mean_point(self._anchors['top', 'left'].coords)
+        cl_anchor = utils.mean_point(self._anchors['top',  'left'].coords)
 
         roll_angle = np.arctan((cr_anchor[2] - cl_anchor[2] ) / abs(cl_anchor[0] - cr_anchor[0]))
         self.rotate(0, roll_angle, 0, degrees=False)
@@ -75,7 +74,7 @@ class FaceAlignedKey(KeyAssy):
 # should be used for plate mount boards
 class SocketAlignedKey(KeyAssy):
     def __init__(self, config, socket_config, r, u=1):
-        super(SocketAlignedKey, self).__init__(config, socket_config, r, u)
+        super().__init__(config, socket_config, r, u)
 
         # set the assembly corner anchors to top of the socket
         # no additional alignment required

@@ -1,7 +1,7 @@
 import solid as sl
 from collections import Iterable
 
-from .geometry_base import Solid, AnchorCollection
+from .geometry_base import Part, AnchorCollection
 
 # if the passed object is a 3D point, return it as a list where the only element is that point
 # important for proper iteration
@@ -29,9 +29,9 @@ def _make_spheres(geo):
 
 
 #Connectors will create a part that is a convex hull around all points in *args
-class Connector(Solid):
+class Connector(Part):
     def __init__(self, anchors: AnchorCollection):
-        super(Connector, self).__init__()
+        super().__init__()
         assert len(anchors) > 0
         self._anchors = AnchorCollection.copy_from(anchors)
 

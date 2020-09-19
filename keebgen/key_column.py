@@ -1,6 +1,5 @@
-from better_abc import abstractmethod
+from keebgen.better_abc import abstractmethod
 import numpy as np
-import solid as sl
 
 from .geometry_base import Assembly, PartCollection, CuboidAnchorCollection
 from . import geometry_utils as utils
@@ -10,11 +9,11 @@ from .connector import Connector
 class KeyColumn(Assembly):
     @abstractmethod
     def __init__(self):
-        super(KeyColumn, self).__init__()
+        super().__init__()
 
 class ConcaveOrtholinearColumn(KeyColumn):
     def __init__(self, config, key_config, socket_config):
-        super(ConcaveOrtholinearColumn, self).__init__()
+        super().__init__()
         self._parts = PartCollection()
 
         radius = config.getfloat('radius')

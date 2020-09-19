@@ -1,4 +1,4 @@
-from better_abc import abstractmethod
+from keebgen.better_abc import abstractmethod
 from .geometry_base import Assembly, PartCollection
 
 # TODO remove this when configs updated

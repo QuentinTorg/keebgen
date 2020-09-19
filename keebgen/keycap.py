@@ -1,23 +1,22 @@
-from better_abc import abstractmethod
 import numpy as np
 import solid as sl
 
-from .geometry_base import Solid, CuboidAnchorCollection
+from .geometry_base import Part, CuboidAnchorCollection
 from . import geometry_utils as utils
 
 # when adding new keycaps, they should be oriented so the mounting feature is aligned with the Z axis
 # the bottom face should be offset from the XY plane by the same distance that they would be offset from
 # a mounting plate if they were plate mounted switches
-class Keycap(Solid):
+class Keycap(Part):
     def __init__(self):
-        super(Keycap, self).__init__()
+        super().__init__()
 
     def solid(self):
         return self._solid.set_modifier('%')
 
 class OEM(Keycap):
     def __init__(self, r, u=1):
-        super(OEM, self).__init__()
+        super().__init__()
         key_pitch = 19.0 # width between keys on standard board
 
         vertical_offset = 5.5 # vertical height from plate mount when mounted on switch

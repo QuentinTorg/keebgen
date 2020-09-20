@@ -29,6 +29,18 @@ class AnchorCollectionTests(unittest.TestCase):
         assert len(set(c['left']) & set(c['right'])) == 0
         assert len(set(c['left']) | set(c['right'])) == 8
 
+        #TODO: check that
+        # 4 smallest X vals are left
+        # 4 largest X vals are right
+        # 4 smallest Y values are back
+        # 4 largest Y values are front
+        # 4 smallest Z values are bottom
+        # 4 largest Z values are top
+
+        # do the same for CuboidAnchorCollection generated from non-unit coords
+        # cube_corners = [ (0, -3, 0),  (15, 0, 0), (11, 13, 0),  (0, 8, 0),
+        #                  (0, -8, 12), (12, 0, 8), (15, 12, 10), (0, 11, 10) ]
+
 
 class AnchorLinkTest(unittest.TestCase):
     def test_basic(self):
@@ -147,3 +159,4 @@ class MultipleTranslationTest(unittest.TestCase):
 
         #TODO: need to make sure that an exported .scad file matches the expected shape
         # in current config, all three cubes are overlapping unit cubes
+

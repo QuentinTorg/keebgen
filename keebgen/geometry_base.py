@@ -3,6 +3,7 @@ from keebgen.better_abc import BetterABCMeta, abstractmethod, abstractattribute
 import solid as sl
 import numpy as np
 import itertools
+from typing import Sequence, Union, Set, Iterable
 
 from . import geometry_utils as utils
 
@@ -26,7 +27,6 @@ class Part(metaclass=BetterABCMeta):
             z = utils.rad2deg(z)
         self._solid = sl.rotate([x, y, z])(self._solid)
         self._anchors.rotate(x,y,z)
-
 
     def anchors(self):
         return self._anchors
@@ -80,6 +80,7 @@ class PartCollection:
         for part in self._part_list:
             part.rotate(x, y, z, degrees)
 
+
 class Assembly(Part):
     _parts: PartCollection = abstractattribute()
     _anchors = abstractattribute()
@@ -111,8 +112,6 @@ class Assembly(Part):
     def get_part(self, part_name):
         return self._parts.get(part_name)
 
-
-from typing import Sequence, Union, Set, Iterable
 
 class LabeledPoint:
     """A 3D point with one or more labels"""
@@ -193,6 +192,10 @@ class CuboidAnchorCollection(AnchorCollection):
         if isinstance(corner_coords, AnchorCollection):
             corner_coords = [x.coords for x in corner_coords]
 
+        # make sure each point is 3D
+        for coord in corner_coords:
+            assert(len(coord) == 3)
+
         corner_coords = self._sort_coords(corner_coords)
         labels = self._create_labels()
         labeled_points = [LabeledPoint(c,l) for c,l in zip(corner_coords, labels)]
@@ -213,7 +216,7 @@ class CuboidAnchorCollection(AnchorCollection):
 
     @staticmethod
     def _sort_coords(coords) -> np.ndarray:
-        coords = np.array(coords).reshape((8,3))
+        coords = np.array(coords, dtype=float).reshape((8,3))
         originals = coords.copy()
         # move coords so that the origin is within the cuboid
         coords -= np.mean(coords, axis=0)
@@ -253,4 +256,3 @@ class CuboidAnchorCollection(AnchorCollection):
         add(labels[:, :, 0], 'bottom')
         add(labels[:, :, 1], 'top')
         return labels.flatten()
-

@@ -8,8 +8,8 @@ from . import geometry_utils as utils
 
 # base class for all solids
 class Part(metaclass=BetterABCMeta):
-    _solid = abstractattribute()
-    _anchors = abstractattribute()
+    _solid: sl.OpenSCADObject = abstractattribute()
+    _anchors: AnchorCollection = abstractattribute()
 
     # child __init__() functions responsible for populating self._solid and self.anchors
     def solid(self):
@@ -27,7 +27,7 @@ class Part(metaclass=BetterABCMeta):
         self._solid = sl.rotate([x, y, z])(self._solid)
         self._anchors.rotate(x,y,z)
 
-
+    @property
     def anchors(self):
         return self._anchors
 
@@ -68,8 +68,21 @@ class PartCollection:
             self.get(name).translate(x,y,z)
             return
         # no part specified, translate all parts
+
+        # Collect a unique set of AnchorCollection objects to ensure
+        # that nothing is translated twice.
+        all_anchors = set()
         for part in self._part_list:
-            part.translate(x,y,z)
+            if issubclass(part.__class__, Assembly):
+                all_anchors |= set(part._parts._get_children_anchors())
+            else:
+                all_anchors.add(part.anchors)
+        # Apply the translation
+        for a in all_anchors:
+            a.translate(x,y,z)
+
+    def _get_children_anchors(self):
+        return [x.anchors for x in self._part_list]
 
     def rotate(self, x=0, y=0, z=0, degrees=True, name=None):
         # return specific part
@@ -82,12 +95,12 @@ class PartCollection:
 
 class Assembly(Part):
     _parts: PartCollection = abstractattribute()
-    _anchors = abstractattribute()
+    # This is purposefully left as None to bypass Part's abstractattribute.
+    # It should be required, but this is an exception.
+    _solid = None
 
     def __init__(self):
-        # This is purposefully left as None to bypass Part's abstractattribute.
-        # It should be required, but this is an exception.
-        self._solid = None
+        super().__init__()
 
     # child __init__() functions responsible for populating self._parts and self._anchors
     def solid(self):
@@ -104,7 +117,7 @@ class Assembly(Part):
     def anchors_by_part(self, part_name) -> AnchorCollection:
         """Returns the anchors of the requested part"""
         if self._parts.get(part_name):
-            return self._parts.get(part_name).anchors()
+            return self._parts.get(part_name).anchors
 
         raise KeyError(f'Part name "{part_name}" could not be found.')
 
@@ -118,7 +131,7 @@ class LabeledPoint:
     """A 3D point with one or more labels"""
     def __init__(self, coords: Sequence[float], labels: Union[Sequence[str], Set[str]]):
         assert len(coords) == 3
-        self.coords = coords
+        self.coords = list(coords)
         self.labels = set(labels)
 
     def translate(self, x=0, y=0, z=0):
@@ -213,7 +226,7 @@ class CuboidAnchorCollection(AnchorCollection):
 
     @staticmethod
     def _sort_coords(coords) -> np.ndarray:
-        coords = np.array(coords).reshape((8,3))
+        coords = np.array(coords, dtype=float).reshape((8,3))
         originals = coords.copy()
         # move coords so that the origin is within the cuboid
         coords -= np.mean(coords, axis=0)

@@ -68,18 +68,8 @@ class PartCollection:
             self.get(name).translate(x,y,z)
             return
         # no part specified, translate all parts
-
-        # Collect a unique set of AnchorCollection objects to ensure
-        # that nothing is translated twice.
-        all_anchors = set()
         for part in self._part_list:
-            if issubclass(part.__class__, Assembly):
-                all_anchors |= set(part._parts._get_children_anchors())
-            else:
-                all_anchors.add(part.anchors)
-        # Apply the translation
-        for a in all_anchors:
-            a.translate(x,y,z)
+            part.translate(x,y,z)
 
     def _get_children_anchors(self):
         return [x.anchors for x in self._part_list]

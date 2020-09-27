@@ -20,7 +20,6 @@ class FlaredSkirt(Assembly):
         for edge_pair in edge_pairs:
             # make sure pair is a pair
             assert(len(edge_pair) == 2)
-
             segments.append(self._make_skirt_segment(edge_pair[0], edge_pair[1]))
 
         self._parts = PartCollection()

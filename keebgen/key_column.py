@@ -10,6 +10,11 @@ class KeyColumn(Assembly):
     @abstractmethod
     def __init__(self):
         super().__init__()
+        # must define self._front_socket_name and self._back_socket_name in constructor
+
+    def get_key_names(self):
+        return self._key_names
+
 
 class ConcaveOrtholinearColumn(KeyColumn):
     def __init__(self, config, key_config, socket_config):
@@ -24,6 +29,7 @@ class ConcaveOrtholinearColumn(KeyColumn):
         home_angle = config.getfloat('home_tiltback_angle')
 
         prev_anchors = None
+        self._key_names = []
         for i in range(num_keys):
             r = 4-i + (home_index-1)
             rotation_index = i - home_index
@@ -34,7 +40,7 @@ class ConcaveOrtholinearColumn(KeyColumn):
 
             # for alignment across rows, name keys by index from the home row. negative is below home
             key_name = rotation_index
-
+            self._key_names.append(key_name)
 
             # add a key_assy to the parts
             self._parts.add(FaceAlignedKey(key_config, socket_config, r), key_name)

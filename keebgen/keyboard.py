@@ -1,11 +1,12 @@
 from keebgen.better_abc import abstractmethod
-from .geometry_base import Assembly, PartCollection
+from .geometry_base import Assembly, PartCollection, AnchorCollection
 
 # TODO remove this when configs updated
 import configparser
 
 from .key_column import ConcaveOrtholinearColumn
 from .connector import Connector
+from .skirt import FlaredSkirt
 
 class Keyboard(Assembly):
     @abstractmethod
@@ -73,7 +74,6 @@ class DactylManuform(Keyboard):
         ring_z_off = -2.5
         pinky_z_off = -6.5
         post_pinky_z_off = pinky_z_off + 3
-
 
         prev_name = None
         for col_num, col_config in enumerate(col_configs):
@@ -175,18 +175,52 @@ class DactylManuform(Keyboard):
                                                  cur_col_anchors['left'] +
                                                  cur_col_prev_anchors['left', 'front']))
 
-
-
-
-
                     prev_col_prev_anchors = prev_col_anchors
                     cur_col_prev_anchors = cur_col_anchors
 
             prev_name = name
-#
-#
-#
-#        colum
-#
-#        #TODO: add everything
+
+        # load the skirt
+        edge_pairs = []
+
+        # left side
+        for socket_name in self.get_part(0).get_key_names():
+            anchors = self.get_part(0).get_part(socket_name).anchors_by_part('socket')
+            edge_pairs.append((anchors['top','back'], anchors['left','back']))
+            edge_pairs.append((anchors['top','front'], anchors['left','front']))
+
+        # top
+        for col_name in range(len(col_configs)):
+            col = self.get_part(col_name)
+            top_socket_name = col.get_key_names()[-1]
+            anchors = col.get_part(top_socket_name).anchors_by_part('socket')
+            edge_pairs.append((anchors['top','left'], anchors['front','left']))
+            edge_pairs.append((anchors['top','right'], anchors['front','right']))
+
+        # right, returning reversed list
+        for socket_name in reversed(self.get_part(len(col_configs)-1).get_key_names()):
+            anchors = self.get_part(len(col_configs)-1).get_part(socket_name).anchors_by_part('socket')
+            edge_pairs.append((anchors['top','front'], anchors['right','front']))
+            edge_pairs.append((anchors['top','back'], anchors['right','back']))
+
+        # bottom, returning reversed list
+        for col_name in reversed(range(len(col_configs))):
+            col = self.get_part(col_name)
+            bottom_socket_name = col.get_key_names()[0]
+            anchors = col.get_part(bottom_socket_name).anchors_by_part('socket')
+            edge_pairs.append((anchors['top','right'], anchors['back','right']))
+            edge_pairs.append((anchors['top','left'], anchors['back','left']))
+
+        # TODO add this to the config
+        conf = configparser.ConfigParser()
+        conf['skirt'] = {}
+        conf['skirt']['wall_thickness'] = '2.0'
+        conf['skirt']['flare_size'] = '7.0'
+
+        # TODO translation should happen based on the config, or based on the minimum Z height of all parts
+        # to make sure all parts of the keyboard stay above the xy plane
+        self._parts.translate(0,0,30)
+        self._parts.add(FlaredSkirt(edge_pairs, conf['skirt']), 'skirt')
+
+        #TODO add anchors that make sense
         self._anchors = None

@@ -27,7 +27,6 @@ class Part(metaclass=BetterABCMeta):
         self._solid = sl.rotate([x, y, z])(self._solid)
         self._anchors.rotate(x,y,z)
 
-
     def anchors(self):
         return self._anchors
 

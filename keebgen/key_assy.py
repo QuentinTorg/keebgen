@@ -35,7 +35,6 @@ class KeyAssy(Assembly):
                                                          self.anchors_by_part('socket')['top'])
 
 
-
 # FaceAlignedKeys will have the faces forming a smooth curve on the keybaord regardless of switch and keycap type
 class FaceAlignedKey(KeyAssy):
     def __init__(self, config, socket_config, r, u=1):
@@ -69,6 +68,7 @@ class FaceAlignedKey(KeyAssy):
         # translate so face centered on Z axis, and planar with xy plane
         center_anchor = utils.mean_point(self._anchors['top'].coords)
         self.translate(-center_anchor[0], -center_anchor[1], -center_anchor[2])
+
 
 # simplest case, the switches are aligned based on the socket.
 # should be used for plate mount boards

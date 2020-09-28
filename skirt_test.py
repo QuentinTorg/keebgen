@@ -23,7 +23,8 @@ cube.rotate(30,0,0)
 conf = configparser.ConfigParser()
 conf['skirt'] = {}
 conf['skirt']['wall_thickness'] = '2.0'
-conf['skirt']['flare_size'] = '5.0'
+conf['skirt']['flare_len'] = '4.0'
+conf['skirt']['flare_angle'] = '50.0'
 
 skirt_edges = (
         (cube.anchors()['top','left'], cube.anchors()['front','left']),

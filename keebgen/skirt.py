@@ -1,4 +1,5 @@
-from math import sqrt
+import numpy as np
+from .geometry_utils import deg2rad, rad2deg
 from .better_abc import abstractmethod
 from .geometry_base import Assembly, LabeledPoint, AnchorCollection, PartCollection, CuboidAnchorCollection
 from .connector import Connector
@@ -14,7 +15,8 @@ class FlaredSkirt(Assembly):
         super().__init__()
 
         self._thickness = config.getfloat('wall_thickness')
-        self._flare_size = config.getfloat('flare_size')
+        self._flare_len = config.getfloat('flare_len')
+        self._flare_angle = config.getfloat('flare_angle')
 
         segments = []
         for edge_pair in edge_pairs:
@@ -39,8 +41,8 @@ class FlaredSkirt(Assembly):
 
     # two edges actually made up of three points
     def _make_skirt_segment(self, top_edge, outer_edge):
-    # known limitation: if the wall thickness is larger than the flare_size,
-    # then the wall will encroach on the provided front edges
+    # known limitation: top edge and outer edge are assumed to be perpendicular
+    # it will work without this, but the thickness dimensions may not be correct
         '''
          top_edge
         --------|
@@ -48,14 +50,14 @@ class FlaredSkirt(Assembly):
         --------|
 
 
-        --------|\
-                | \
-        --------|  \ sloping wall
-                 \  \
-                  \  \
-                  |  |
-                  |  | vertical wall to xy plane
-                  |__|
+        --------|---\
+                |    \
+        --------|     \ sloping wall
+                 \     \
+                  \    |
+                  |    |
+                  |    | vertical wall to xy plane
+                  |_ __|
         '''
         # make sure there are only 2 points in each edge
         assert len(top_edge) == 2
@@ -90,25 +92,33 @@ class FlaredSkirt(Assembly):
         # unit vector pointing down, in line with the outer edge
         front_dir = unit_vector(shared_point, bottom_point)
 
-        wall_hyp = sqrt(2) * self._thickness
+        alpha = deg2rad(90 - self._flare_angle) / 2
+        u = self._thickness * np.tan(alpha)
 
+        wall_start_point = front_dir*self._thickness+shared_point
+        top_extension_point = top_dir*u+shared_point
         ret_points = [LabeledPoint(shared_point, ('outside', 'top')),
-                LabeledPoint(front_dir*wall_hyp+shared_point, ('inside', 'top'))]
-        mid_outer_corner = shared_point + top_dir*self._flare_size + front_dir*self._flare_size
+                      LabeledPoint(wall_start_point, ('inside', 'top')),
+                      LabeledPoint(top_extension_point, ('outside', 'top'))]
+
+        flare_dir = unit_vector((0,0,0), top_dir*np.sin(deg2rad(self._flare_angle)) +
+                                         front_dir*np.cos(deg2rad(self._flare_angle)))
+
+        beta = np.arccos(np.dot(flare_dir,(0,0,-1))) / 2
+        v = self._thickness * np.tan(beta)
+
+        mid_outer_corner = top_extension_point + (u + v + self._flare_len)*flare_dir
+        mid_inner_corner = wall_start_point + self._flare_len*flare_dir
+
         ret_points.append(LabeledPoint(mid_outer_corner, ('outside', 'middle')))
+        ret_points.append(LabeledPoint(mid_inner_corner, ('inside', 'middle')))
 
         bottom_outer_corner = copy.deepcopy(mid_outer_corner)
         bottom_outer_corner[2] = 0.0
         ret_points.append(LabeledPoint(bottom_outer_corner, ('bottom', 'outer')))
 
-        no_z_top_dir = copy.deepcopy(top_dir)
-        no_z_top_dir[2] = 0.0
-        no_z_top_dir = unit_vector((0,0,0), no_z_top_dir)
-
-        mid_inner_corner = mid_outer_corner - no_z_top_dir * self._thickness
-        bottom_inner_corner = bottom_outer_corner - no_z_top_dir * self._thickness
-
-        ret_points.append(LabeledPoint(mid_inner_corner, ('middle', 'inner')))
+        bottom_inner_corner = copy.deepcopy(mid_inner_corner)
+        bottom_inner_corner[2] = 0.0
         ret_points.append(LabeledPoint(bottom_inner_corner, ('bottom', 'inner')))
 
         # return a plane of segments in order of top, middle, bottom

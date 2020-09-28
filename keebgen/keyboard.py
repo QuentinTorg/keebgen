@@ -215,7 +215,8 @@ class DactylManuform(Keyboard):
         conf = configparser.ConfigParser()
         conf['skirt'] = {}
         conf['skirt']['wall_thickness'] = '2.0'
-        conf['skirt']['flare_size'] = '7.0'
+        conf['skirt']['flare_len'] = '4.0'
+        conf['skirt']['flare_angle'] = '30.0'
 
         # TODO translation should happen based on the config, or based on the minimum Z height of all parts
         # to make sure all parts of the keyboard stay above the xy plane

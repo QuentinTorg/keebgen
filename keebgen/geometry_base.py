@@ -198,6 +198,10 @@ class CuboidAnchorCollection(AnchorCollection):
         super().__init__(labeled_points)
 
     @staticmethod
+    def copy_from(other: AnchorCollection):
+        return CuboidAnchorCollection(super().copy_from(other))
+
+    @staticmethod
     def create(dims=(1,1,1), offset=(0,0,0)):
         """
         Creates a CuboidAnchorCollection based on the input dimensions.

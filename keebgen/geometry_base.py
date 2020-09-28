@@ -199,7 +199,7 @@ class CuboidAnchorCollection(AnchorCollection):
 
     @staticmethod
     def copy_from(other: AnchorCollection):
-        return CuboidAnchorCollection(super().copy_from(other))
+        return CuboidAnchorCollection(other.coords)
 
     @staticmethod
     def create(dims=(1,1,1), offset=(0,0,0)):

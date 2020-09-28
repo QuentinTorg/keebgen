@@ -27,7 +27,6 @@ class Part(metaclass=BetterABCMeta):
         self._solid = sl.rotate([x, y, z])(self._solid)
         self._anchors.rotate(x,y,z)
 
-
     def anchors(self):
         return self._anchors
 
@@ -197,6 +196,10 @@ class CuboidAnchorCollection(AnchorCollection):
         labels = self._create_labels()
         labeled_points = [LabeledPoint(c,l) for c,l in zip(corner_coords, labels)]
         super().__init__(labeled_points)
+
+    @staticmethod
+    def copy_from(other: AnchorCollection):
+        return CuboidAnchorCollection(other.coords)
 
     @staticmethod
     def create(dims=(1,1,1), offset=(0,0,0)):

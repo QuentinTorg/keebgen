@@ -24,6 +24,7 @@ class ThumbCluster(Assembly):
 
 
 class KeyGrid:
+    #TODO key_gap should be part of a config
     key_gap = 2.5
 
     def __init__(self, grid: List[List[Optional[KeyAssy]]],
@@ -220,9 +221,9 @@ class ManuformThumbCluster(ThumbCluster):
         self._parts = PartCollection()
         self._home_key_idx = home_key_idx
 
-        def K(u=1.):
+        def K(r=1,u=1.):
             """Convenience function for creating new keys"""
-            key = FaceAlignedKey(key_config, socket_config, r=1, u=u)
+            key = FaceAlignedKey(key_config, socket_config, r=r, u=u)
             # key.rotate(z=-90) # make the u>1 keys are vertical
             self._parts.add(key)
             return key

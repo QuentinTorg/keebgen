@@ -1,5 +1,7 @@
 from numpy import pi
 from scipy.spatial.transform import Rotation
+from numpy.linalg import norm
+import numpy as np
 
 def deg2rad(degrees: float) -> float:
     return degrees * pi / 180
@@ -45,3 +47,10 @@ def mean_point(points):
     mean_point[1] = mean_point[1] / len(points)
     mean_point[2] = mean_point[2] / len(points)
     return mean_point
+
+# return vector of length one pointing from 1->2
+def unit_vector(point1, point2):
+    point1 = np.array(point1)
+    point2 = np.array(point2)
+    dir_vec = point2 - point1
+    return dir_vec / norm(dir_vec)

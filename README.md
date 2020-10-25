@@ -89,5 +89,9 @@ anchor scheme matches the general scheme of the primative type
 Ideally, keyboard models are parametric when appropriate, at a minimum
 allowing users to customize keycap and switch type with a config file
 
+### Testing
+Make sure tests run using `python3 -m unittest test/geometry_tests.py` from the repo's root directory.
+More tests to come
+
 ### Contributors
 - someone

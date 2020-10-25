@@ -9,7 +9,8 @@ class ThumbClusterTests(unittest.TestCase):
     def test_basic(self):
         import configparser
         config = configparser.ConfigParser()
-        config.read('/home/dharton/side/keebgen/default_config.ini')
+        config_path = Path(__file__).resolve().parent.parent / 'default_config.ini'
+        config.read(config_path)
         key_config = config['key_assy']
         socket_config = config['socket']
 

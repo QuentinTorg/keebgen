@@ -59,5 +59,3 @@ class CherryMXSocket(Part):
         self._solid = socket
         self._anchors = CuboidAnchorCollection.create(dims=(width, length, thickness),
                                                       offset=(0, 0, -thickness/2))
-
-

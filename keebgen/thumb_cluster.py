@@ -25,6 +25,7 @@ class ThumbCluster(Assembly):
 
 
 class KeyGrid:
+    #TODO key_gap should be part of a config
     key_gap = 2.5
 
     def __init__(self, grid: List[List[Optional[KeyAssy]]],

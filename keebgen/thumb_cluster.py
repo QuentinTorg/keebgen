@@ -17,6 +17,7 @@ class DebuggingPoint(Part):
         self._solid = sphere
         self._anchors = AnchorCollection([LabeledPoint(coords, ['center'])])
 
+#TODO: refactor this to reduce repetition
 class ThumbCluster(Assembly):
     @abstractmethod
     def __init__(self):
@@ -86,7 +87,7 @@ class KeyGrid:
                 if key is None or rotation is None:
                     continue
 
-                # apply rotation about the center of the key
+                # apply rotation around the center of the key
                 center = np.array(key.anchors.center())
                 key.translate(*(-center))
                 key.rotate(*rotation, degrees=degrees)
@@ -103,9 +104,6 @@ class KeyGrid:
         def angle_between(p1, p2):
             p1 = np.array(p1)
             p2 = np.array(p2)
-            # ang1 = np.arctan2(*p1[::-1])
-            # ang2 = np.arctan2(*p2[::-1])
-            # return ang1 - ang2
             return np.arctan2(p2[1] - p1[1], p2[0] - p1[0])
 
         for y in range(len(self.grid)):
@@ -118,8 +116,8 @@ class KeyGrid:
 
                 kx,ky,kz = key.anchors.center()
 
-                x_angle = angle_between([kz, -ky], [rz, ry])/2
-                y_angle = angle_between([kz, kx], [rz, rx])/2
+                x_angle = -angle_between([kz, ky], [rz, ry])
+                y_angle = -angle_between([kz, kx], [rz, rx])
                 z_angle = angle_between([kx, ky], [rx, ry]) - np.pi/2
 
                 # one_offset = np.arctan2(np.linalg.norm(np.cross(key_center,r, axis=0), axis=0), np.dot(key_center,r))
@@ -128,20 +126,22 @@ class KeyGrid:
                 key.rotate(x_angle, y_angle, 0, degrees=False)
 
 
+                # TODO: fix this so it works with positive and negative values for `rz`
+
                 # Rotate to face the r point
 
                 # Get new key position
                 kx, ky, kz = key.anchors.center()
 
-                x_angle = angle_between([kz, -ky], [rz, ry])/2
+                x_angle = angle_between([kz, ky], [rz, ry])/2
                 y_angle = angle_between([kz, kx], [rz, rx])/2
                 z_angle = angle_between([kx, ky], [rx, ry]) - np.pi / 2
 
                 # print('angle2', x_angle, y_angle, z_angle)
                 center = np.array(key.anchors.center())
-                key.translate(*(-center))
-                key.rotate(x_angle, y_angle, 0, degrees=False)
-                key.translate(*center)
+                # key.translate(*(-center))
+                # key.rotate(x_angle, y_angle, 0, degrees=False)
+                # key.translate(*center)
 
 
                 # key.translate(rx,ry,rz)
@@ -223,41 +223,36 @@ class ManuformThumbCluster(ThumbCluster):
         def K(u=1.):
             """Convenience function for creating new keys"""
             key = FaceAlignedKey(key_config, socket_config, r=1, u=u)
-            # key.rotate(z=-90) # make the u>1 keys are vertical
+            key.rotate(z=-90) # make the u>1 keys are vertical
             self._parts.add(key)
             return key
 
         # Populate the right hand keys
         keys = [
-            [K(), K(), K(), K(), K(), K(), K(), K()],
-            [K(), K(), K(), K(), K(), K(), K(), K()],
-            [K(), K(), K(), K(), K(), K(), K(), K()],
-            [K(), K(), K(), K(), K(), K(), K(), K()]
+            [K(), K(), K(1.5), K(1.5)],
+            [K(), K()],
         ]
 
         # KeyGrid class will apply the actual geometry
         self.key_grid = KeyGrid(keys, standard_key_size=keys[0][0].anchors.bounds())
 
-        self.key_grid.apply_curvature(0, 0, 100)
+        # TODO: fix this
+        # self.key_grid.apply_curvature(0, 0, -500)
 
         # Units are in millimeters
         xyz_offsets = [
-            [None, (0, 6, 0), (8, 10, 0), (8, 6, 0)],
-            [None, None]
+            [None, (0, 6, 0), (2, 7, -1), (-2, -6, -3)],
+            [None, (0, 2, 0)]
         ]
-        # self.key_grid.apply_offsets(xyz_offsets)
+        self.key_grid.apply_offsets(xyz_offsets)
 
         # Units are in degrees
         xyz_rotations = [
-            [(0, 0, -45), (0, 0, 45), (0, 0, 0), (0, 0, 0)],
+            [(0, 0, 0), (0, 0, -5), (0, 5, -25), (0, 9, -25)],
             [None, None]
         ]
-        # self.key_grid.apply_rotations(xyz_rotations)
+        self.key_grid.apply_rotations(xyz_rotations)
 
-
-
-        # apply rotation to entire grid
-        # self.key_grid.rotate()
 
 
         # Get the corner keys

@@ -1,4 +1,5 @@
 from keebgen.better_abc import abstractmethod
+from .connector import Connector
 from .geometry_base import Assembly, PartCollection, CuboidAnchorCollection, Part, AnchorCollection, LabeledPoint
 from .key_assy import FaceAlignedKey, KeyAssy
 from . import geometry_utils as utils
@@ -22,6 +23,8 @@ class ThumbCluster(Assembly):
     @abstractmethod
     def __init__(self):
         super().__init__()
+
+
 
 
 class KeyGrid:
@@ -149,7 +152,6 @@ class KeyGrid:
 
 
 
-
 class DactylThumbCluster(ThumbCluster):
     def __init__(self, key_config, socket_config, home_key_idx=(1,1)):
         """
@@ -210,11 +212,11 @@ class ManuformThumbCluster(ThumbCluster):
         Right handed thumb cluster.
         In the final shape, the top row should be fanned out and slightly staggered.
 
-        [1][2][3][4]
-        [5][6]
+        [0][1][2][3]
+        [4][5]
 
-        Keys 3 and 4 are 1.5U.
-        By default, key 4 is the home_key.
+        Keys 2 and 3 are 1.5U.
+        By default, key 3 is the home_key.
         """
 
         super().__init__()
@@ -242,14 +244,14 @@ class ManuformThumbCluster(ThumbCluster):
 
         # Units are in millimeters
         xyz_offsets = [
-            [None, (0, 6, 0), (2, 7, -1), (-2, -6, -3)],
-            [None, (0, 2, 0)]
+            [(1, 0, -2), (0, 4, -1), (3, 3, -1), (-4, -12, -3)],
+            [(1, 0, -2), (0, 2, -1)]
         ]
         self.key_grid.apply_offsets(xyz_offsets)
 
         # Units are in degrees
         xyz_rotations = [
-            [(0, 0, 0), (0, 0, -5), (0, 5, -25), (0, 9, -25)],
+            [(0, 0, 0), (0, 0, -5), (0, 5, -35), (0, 9, -35)],
             [None, None]
         ]
         self.key_grid.apply_rotations(xyz_rotations)
@@ -257,10 +259,10 @@ class ManuformThumbCluster(ThumbCluster):
 
 
         # Get the corner keys
-        back_left  = keys[0][0] # key 1
-        front_left = keys[1][0] # key 5
-        back_right = keys[0][3] # key 4
-        front_right = back_right # reuse key 4 since it's the only one on that column.
+        back_left  = keys[0][0] # key 0
+        front_left = keys[1][0] # key 4
+        back_right = keys[0][3] # key 3
+        front_right = back_right # reuse key 3 since it's the only one on that column.
 
         self._anchors = CuboidAnchorCollection(
             back_left.anchors['back', 'left'] +
@@ -268,4 +270,64 @@ class ManuformThumbCluster(ThumbCluster):
             back_right.anchors['back', 'right'] +
             front_right.anchors['front', 'right'])
 
-        self.skirt = None # TODO
+
+        # Connectors
+
+        # keys as a flat list
+        keys_map = sum([x for x in keys], [])
+        socket_map = [x.get_part('socket') for x in keys_map]
+
+
+        # First apply the main connectors between the grid-ish keys
+        front_back_connector_pair_map = np.array([
+            [0,1], [1,2], [2,3],
+            [4,5]
+        ])
+
+        for idx1, idx2 in front_back_connector_pair_map:
+            self._parts.add(Connector(socket_map[idx1].anchors['front'] +
+                                      socket_map[idx2].anchors['back']))
+
+        right_left_connector_pair_map = np.array([
+            [0, 4], [1, 5]
+        ])
+
+        for idx1, idx2 in right_left_connector_pair_map:
+            self._parts.add(Connector(socket_map[idx1].anchors['right'] +
+                                      socket_map[idx2].anchors['left']))
+
+        # fill in the center between the 4 small keys
+        self._parts.add(Connector(
+            socket_map[0].anchors['front', 'right'] +
+            socket_map[1].anchors['back', 'right'] +
+            socket_map[4].anchors['front', 'left'] +
+            socket_map[5].anchors['back', 'left']
+        ))
+
+        # Fill in the gap around the long keys
+        self._parts.add(Connector(
+            socket_map[2].anchors['right'] +
+            socket_map[5].anchors['front']
+        ))
+
+        self._parts.add(Connector(
+            socket_map[2].anchors['front', 'right'] +
+            socket_map[5].anchors['front', 'right'] +
+            socket_map[3].anchors['back', 'right']
+        ))
+
+        # self._parts.add(Connector(
+        #     socket_map[5].anchors['front', 'right'] +
+        #     socket_map[3].anchors['right']
+        # ))
+
+        self.skirt = None # TODO: Should this be done at the keyboard level?
+
+        # move the TC so the home key is in the center
+        offset = [-x for x in self.home_key.anchors.center()]
+        self.translate(*offset)
+
+    @property
+    def home_key(self):
+        x,y = self._home_key_idx
+        return self.key_grid.grid[x][y]

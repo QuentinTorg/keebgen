@@ -120,7 +120,7 @@ from typing import Sequence, Union, Set, Iterable
 class LabeledPoint:
     """A 3D point with one or more labels"""
     def __init__(self, coords: Sequence[float], labels: Union[Sequence[str], Set[str]]):
-        assert len(coords) == 3
+        assert np.asarray(coords).size == 3
         self.coords = list(coords)
         self.labels = set(labels)
 

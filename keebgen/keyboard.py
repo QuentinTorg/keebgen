@@ -6,6 +6,7 @@ import configparser
 
 from .key_column import ConcaveOrtholinearColumn
 from .connector import Connector
+from .thumb_cluster import ManuformThumbCluster
 from .skirt import FlaredSkirt
 
 class Keyboard(Assembly):
@@ -179,6 +180,25 @@ class DactylManuform(Keyboard):
                     cur_col_prev_anchors = cur_col_anchors
 
             prev_name = name
+
+        thumbcluster = ManuformThumbCluster(key_config, socket_config)
+        # offset based on home key position
+        tc_home_key = thumbcluster.home_key
+        col = self._parts.get(1)
+
+        # TODO: improve column and row naming so this is readable.
+
+        # hand tuned alignment
+        thumbcluster.rotate(25, -30, 15, degrees=True)
+        thumbcluster.translate(-5,-3,-7)
+
+        anchor_pos = list(col.get_part(-1).anchors.center())
+        anchor_pos[1] -= tc_home_key.anchors.bounds()[1]  # shift alone y axis
+        tc_offset = [x for x in anchor_pos]
+        thumbcluster.translate(*tc_offset)
+
+        self._parts.add(thumbcluster)
+
 
         # load the skirt
         edge_pairs = []

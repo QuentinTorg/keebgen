@@ -11,7 +11,7 @@ their own custom keyboards. This project was inspired by the Dactyl project,
 but is intended to be a genaric library of building blocks that can be used to
 quickly and easily design any type of keyboard.
 
-KeebGen provides users with common keybaord primatives that allow a user to
+KeebGen provides users with common keyboard primatives that allow a user to
 model an entire keyboard without having to worry about the minutia of a design.
 A Cherry MX switch is a standard part, so users should not have to re-draw a
 socket for it every time they want to design a new keyboard. Instead, they can
@@ -62,6 +62,10 @@ This is also possible in the OpenSCAD viewer window. Render the file with F6, th
 When customizing a keyboard, it can be helpful to have the OpenSCAD model open
 to see updates immediately automatically re-run python script on save. have
 OpenSCAD open
+
+to automatically run script whenever directory changes:
+`while true; do inotifywait -e modify <path_to_directory> && python3 <script to run>; done`
+`while true; do inotifywait -e modify keebgen && python3 examples.py; done`
 
 talk about printing smallest building block as you go. If you don't know
 printer parameters you need for a good socket, start by printing a socket only

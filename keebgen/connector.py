@@ -38,6 +38,6 @@ class Connector(Part):
         # using hull around tiny spheres is a hack, but whatever. saves a ton of code
         spheres = _make_spheres(self._anchors)
         # make sure we didn't end up with zero points
-        # we may want to adjust this functionality later and just return solid.part() for empty connectors
+        # TODO we may want to adjust this functionality later and just return solid.part() for empty connectors
         assert len(spheres) > 0
         self._solid = sl.hull()(*spheres)

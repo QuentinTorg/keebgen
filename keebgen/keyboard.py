@@ -209,10 +209,12 @@ class DactylManuform(Keyboard):
         bottom_left_key2 = self._parts.get(2).get_part(-2).get_part('socket')
         bottom_left_key3 = self._parts.get(3).get_part(-2).get_part('socket')
 
+        self._parts.add(Connector(thumb_key1.anchors['left'] +
+                                  bottom_left_key0.anchors['left','front']))
+
         self._parts.add(Connector(thumb_key1.anchors['left','front'] +
                                   thumb_key2.anchors['left','back'] +
                                   bottom_left_key0.anchors['left']))
-
 
         self._parts.add(Connector(thumb_key2.anchors['left'] +
                                   bottom_left_key0.anchors['back']))
@@ -236,10 +238,6 @@ class DactylManuform(Keyboard):
         self._parts.add(Connector(thumb_key3.anchors['front'] +
                                   bottom_left_key3.anchors['back','left']))
 
-
-
-        #key2.anchors['front']
-        #col = self._parts.get(1)
 
 
         # load the skirt
@@ -298,7 +296,7 @@ class DactylManuform(Keyboard):
         edge_pairs.append((thumb_anchors0['top','back'],thumb_anchors0['back','left']))
         edge_pairs.append((thumb_anchors0['top','front'],thumb_anchors0['front','left']))
         edge_pairs.append((thumb_anchors1['top','back'],thumb_anchors1['back','left']))
-        edge_pairs.append((thumb_anchors1['top','front'],thumb_anchors1['front','left']))
+        #edge_pairs.append((thumb_anchors1['top','front'],thumb_anchors1['front','left']))
 
 
         # TODO add this to the config

@@ -16,9 +16,15 @@ cube_input_corners = [
             LabeledPoint((0, 10, 3), ('top', 'left', 'front'))
             ]
 
-cube = Connector(AnchorCollection(cube_input_corners))
-cube.translate(0,0,25)
-cube.rotate(30,0,0)
+cube0 = Connector(AnchorCollection(cube_input_corners))
+cube0.translate(0,0,25)
+cube0.rotate(30,0,0)
+
+cube1 = Connector(AnchorCollection(cube_input_corners))
+cube1.translate(5,5,25)
+cube1.rotate(15,0,0)
+
+cube_connection = Connector(AnchorCollection(cube1.anchors()['back'] + cube0.anchors()['front']))
 
 conf = configparser.ConfigParser()
 conf['skirt'] = {}
@@ -27,18 +33,23 @@ conf['skirt']['flare_len'] = '4.0'
 conf['skirt']['flare_angle'] = '50.0'
 
 skirt_edges = (
-        (cube.anchors()['top','left'], cube.anchors()['front','left']),
-        (cube.anchors()['top','right'], cube.anchors()['front','right']),
-        (cube.anchors()['top','front'], cube.anchors()['front','right']),
-        (cube.anchors()['top','back'], cube.anchors()['back','right']),
-        (cube.anchors()['top','right'], cube.anchors()['back','right']),
-        (cube.anchors()['top','left'], cube.anchors()['back','left']),
-        (cube.anchors()['top','back'], cube.anchors()['back','left']),
-        (cube.anchors()['top','front'], cube.anchors()['front','left']))
+        (cube1.anchors()['top','left'], cube1.anchors()['front','left']),
+        (cube1.anchors()['top','right'], cube1.anchors()['front','right']),
+        (cube1.anchors()['top','front'], cube1.anchors()['front','right']),
+        (cube1.anchors()['top','back'], cube1.anchors()['back','right']),
+        (cube0.anchors()['top','front'], cube0.anchors()['front','right']),
+        (cube0.anchors()['top','back'], cube0.anchors()['back','right']),
+
+        (cube0.anchors()['top','right'], cube0.anchors()['back','right']),
+        (cube0.anchors()['top','left'],  cube0.anchors()['back','left']),
+        (cube0.anchors()['top','back'],  cube0.anchors()['back','left']),
+        (cube0.anchors()['top','front'], cube0.anchors()['front','left']),
+        (cube1.anchors()['top','back'],  cube1.anchors()['back','left']),
+        (cube1.anchors()['top','front'], cube1.anchors()['front','left']))
 
 skirt = FlaredSkirt(skirt_edges, conf['skirt'])
 
-solids = cube.solid()
+solids = cube0.solid() + cube1.solid() + cube_connection.solid()
 solids += skirt.solid()
 
 sl.scad_render_to_file(solids, 'skirt_test.scad')

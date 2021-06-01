@@ -189,7 +189,7 @@ class DactylManuform(Keyboard):
         # TODO: improve column and row naming so this is readable.
 
         # hand tuned alignment
-        thumbcluster.rotate(25, -30, 15, degrees=True)
+        thumbcluster.rotate(20, -30, 20, degrees=True)
         thumbcluster.translate(-5,-3,-7)
 
         anchor_pos = list(col.get_part(-1).anchors.center())
@@ -199,14 +199,57 @@ class DactylManuform(Keyboard):
 
         self._parts.add(thumbcluster)
 
+        # add connectors between the thumb cluster and the keyboard
+        thumb_key1 = thumbcluster.key_grid.grid[0][1].get_part('socket')
+        thumb_key2 = thumbcluster.key_grid.grid[0][2].get_part('socket')
+        thumb_key3 = thumbcluster.key_grid.grid[0][3].get_part('socket')
+
+        bottom_left_key0 = self._parts.get(0).get_part(-1).get_part('socket')
+        bottom_left_key1 = self._parts.get(1).get_part(-1).get_part('socket')
+        bottom_left_key2 = self._parts.get(2).get_part(-2).get_part('socket')
+        bottom_left_key3 = self._parts.get(3).get_part(-2).get_part('socket')
+
+        self._parts.add(Connector(thumb_key1.anchors['left','front'] +
+                                  thumb_key2.anchors['left','back'] +
+                                  bottom_left_key0.anchors['left']))
+
+
+        self._parts.add(Connector(thumb_key2.anchors['left'] +
+                                  bottom_left_key0.anchors['back']))
+
+        self._parts.add(Connector(thumb_key3.anchors['left'] +
+                                  bottom_left_key1.anchors['back']))
+
+        self._parts.add(Connector(thumb_key2.anchors['left','front'] +
+                                  thumb_key3.anchors['left','back'] +
+                                  bottom_left_key0.anchors['back','right'] +
+                                  bottom_left_key1.anchors['back','left']))
+
+        self._parts.add(Connector(thumb_key3.anchors['left','front'] +
+                                  bottom_left_key2.anchors['back','left'] +
+                                  bottom_left_key1.anchors['back','right']))
+
+        self._parts.add(Connector(thumb_key3.anchors['left','front'] +
+                                  bottom_left_key2.anchors['back'] +
+                                  bottom_left_key3.anchors['back','left']))
+
+        self._parts.add(Connector(thumb_key3.anchors['front'] +
+                                  bottom_left_key3.anchors['back','left']))
+
+
+
+        #key2.anchors['front']
+        #col = self._parts.get(1)
+
 
         # load the skirt
         edge_pairs = []
 
         # left side
-        for socket_name in self.get_part(0).get_key_names():
+        for (num, socket_name) in enumerate(self.get_part(0).get_key_names()):
             anchors = self.get_part(0).get_part(socket_name).anchors_by_part('socket')
-            edge_pairs.append((anchors['top','back'], anchors['left','back']))
+            if num != 0:
+                edge_pairs.append((anchors['top','back'], anchors['left','back']))
             edge_pairs.append((anchors['top','front'], anchors['left','front']))
 
         # top
@@ -228,8 +271,35 @@ class DactylManuform(Keyboard):
             col = self.get_part(col_name)
             bottom_socket_name = col.get_key_names()[0]
             anchors = col.get_part(bottom_socket_name).anchors_by_part('socket')
-            edge_pairs.append((anchors['top','right'], anchors['back','right']))
-            edge_pairs.append((anchors['top','left'], anchors['back','left']))
+            if col_name > 2:
+                edge_pairs.append((anchors['top','right'], anchors['back','right']))
+                edge_pairs.append((anchors['top','left'], anchors['back','left']))
+
+        # wrap around the thumb cluster
+        thumb_anchors0 = thumbcluster.key_grid.grid[0][0].get_part('socket').anchors
+        thumb_anchors1 = thumbcluster.key_grid.grid[0][1].get_part('socket').anchors
+        thumb_anchors3 = thumbcluster.key_grid.grid[0][3].get_part('socket').anchors
+        thumb_anchors4 = thumbcluster.key_grid.grid[1][0].get_part('socket').anchors
+        thumb_anchors5 = thumbcluster.key_grid.grid[1][1].get_part('socket').anchors
+
+        edge_pairs.append((thumb_anchors3['top','front'],thumb_anchors3['front','right']))
+        edge_pairs.append((thumb_anchors3['top','back'],thumb_anchors3['back','right']))
+        edge_pairs.append((thumb_anchors5['top','front'],thumb_anchors5['front','right']))
+        edge_pairs.append((thumb_anchors5['top','back'],thumb_anchors5['back','right']))
+        edge_pairs.append((thumb_anchors4['top','front'],thumb_anchors4['front','right']))
+        edge_pairs.append((thumb_anchors4['top','back'],thumb_anchors4['back','right']))
+
+        edge_pairs.append((thumb_anchors4['top','right'],thumb_anchors4['back','right']))
+        edge_pairs.append((thumb_anchors4['top','left'],thumb_anchors4['back','left']))
+
+        edge_pairs.append((thumb_anchors0['top','right'],thumb_anchors0['back','right']))
+        edge_pairs.append((thumb_anchors0['top','left'],thumb_anchors0['back','left']))
+
+        edge_pairs.append((thumb_anchors0['top','back'],thumb_anchors0['back','left']))
+        edge_pairs.append((thumb_anchors0['top','front'],thumb_anchors0['front','left']))
+        edge_pairs.append((thumb_anchors1['top','back'],thumb_anchors1['back','left']))
+        edge_pairs.append((thumb_anchors1['top','front'],thumb_anchors1['front','left']))
+
 
         # TODO add this to the config
         conf = configparser.ConfigParser()
@@ -240,7 +310,8 @@ class DactylManuform(Keyboard):
 
         # TODO translation should happen based on the config, or based on the minimum Z height of all parts
         # to make sure all parts of the keyboard stay above the xy plane
-        self._parts.translate(0,0,30)
+        self._parts.translate(0,0,60)
+        self._parts.rotate(0,20,0,degrees=True)
         self._parts.add(FlaredSkirt(edge_pairs, conf['skirt']), 'skirt')
 
         #TODO add anchors that make sense

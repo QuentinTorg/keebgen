@@ -12,6 +12,7 @@ class Keycap(Part):
         super().__init__()
 
     def solid(self):
+        # setting the % modifier makes it render visually in openscad, but not when exporting to stl
         return self._solid.set_modifier('%')
 
 class OEM(Keycap):

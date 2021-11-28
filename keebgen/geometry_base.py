@@ -250,6 +250,7 @@ class CuboidAnchorCollection(AnchorCollection):
         2--|----6  |
         |  1----|--5
         | /     | / Y
+        |/      |/
         0-------4
             X
         """

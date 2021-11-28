@@ -9,8 +9,8 @@ from . import geometry_utils as utils
 
 # base class for all solids
 class Part(metaclass=BetterABCMeta):
-    _solid = abstractattribute()
-    _anchors = abstractattribute()
+    _solid: sl.OpenSCADObject = abstractattribute()
+    _anchors: AnchorCollection = abstractattribute()
 
     # child __init__() functions responsible for populating self._solid and self.anchors
     def solid(self):
@@ -28,6 +28,7 @@ class Part(metaclass=BetterABCMeta):
         self._solid = sl.rotate([x, y, z])(self._solid)
         self._anchors.rotate(x,y,z)
 
+    @property
     def anchors(self):
         return self._anchors
 
@@ -71,6 +72,9 @@ class PartCollection:
         for part in self._part_list:
             part.translate(x,y,z)
 
+    def _get_children_anchors(self):
+        return [x.anchors for x in self._part_list]
+
     def rotate(self, x=0, y=0, z=0, degrees=True, name=None):
         # return specific part
         if name is not None:
@@ -83,12 +87,12 @@ class PartCollection:
 
 class Assembly(Part):
     _parts: PartCollection = abstractattribute()
-    _anchors = abstractattribute()
+    # This is purposefully left as None to bypass Part's abstractattribute.
+    # It should be required, but this is an exception.
+    _solid = None
 
     def __init__(self):
-        # This is purposefully left as None to bypass Part's abstractattribute.
-        # It should be required, but this is an exception.
-        self._solid = None
+        super().__init__()
 
     # child __init__() functions responsible for populating self._parts and self._anchors
     def solid(self):
@@ -105,7 +109,7 @@ class Assembly(Part):
     def anchors_by_part(self, part_name) -> AnchorCollection:
         """Returns the anchors of the requested part"""
         if self._parts.get(part_name):
-            return self._parts.get(part_name).anchors()
+            return self._parts.get(part_name).anchors
 
         raise KeyError(f'Part name "{part_name}" could not be found.')
 
@@ -116,8 +120,8 @@ class Assembly(Part):
 class LabeledPoint:
     """A 3D point with one or more labels"""
     def __init__(self, coords: Sequence[float], labels: Union[Sequence[str], Set[str]]):
-        assert len(coords) == 3
-        self.coords = coords
+        assert np.asarray(coords).size == 3
+        self.coords = list(coords)
         self.labels = set(labels)
 
     def translate(self, x=0, y=0, z=0):
@@ -168,6 +172,14 @@ class AnchorCollection:
     def coords(self):
         return [x.coords for x in self.labeled_points]
 
+    def bounds(self):
+        coords = np.array(self.coords)
+        return tuple(np.max(coords, axis=0) -
+                     np.min(coords, axis=0))
+
+    def center(self):
+        return tuple(np.mean(self.coords, axis=0))
+
     def translate(self, x=0, y=0, z=0):
         for point in self.labeled_points:
             point.translate(x,y,z)
@@ -202,10 +214,6 @@ class CuboidAnchorCollection(AnchorCollection):
         super().__init__(labeled_points)
 
     @staticmethod
-    def copy_from(other: AnchorCollection):
-        return CuboidAnchorCollection(other.coords)
-
-    @staticmethod
     def create(dims=(1,1,1), offset=(0,0,0)):
         """
         Creates a CuboidAnchorCollection based on the input dimensions.
@@ -217,6 +225,10 @@ class CuboidAnchorCollection(AnchorCollection):
         corners = sorted(itertools.product([1., -1.], repeat=3))
         corners = np.array(corners) * np.array(dims) / 2.
         return CuboidAnchorCollection(corners + offset)
+
+    @staticmethod
+    def copy_from(other: AnchorCollection):
+        return CuboidAnchorCollection(other.coords.copy())
 
     @staticmethod
     def _sort_coords(coords) -> np.ndarray:

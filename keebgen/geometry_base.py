@@ -3,6 +3,7 @@ from keebgen.better_abc import BetterABCMeta, abstractmethod, abstractattribute
 import solid as sl
 import numpy as np
 import itertools
+from typing import Sequence, Union, Set, Iterable
 
 from . import geometry_utils as utils
 
@@ -83,6 +84,7 @@ class PartCollection:
         for part in self._part_list:
             part.rotate(x, y, z, degrees)
 
+
 class Assembly(Part):
     _parts: PartCollection = abstractattribute()
     # This is purposefully left as None to bypass Part's abstractattribute.
@@ -114,8 +116,6 @@ class Assembly(Part):
     def get_part(self, part_name):
         return self._parts.get(part_name)
 
-
-from typing import Sequence, Union, Set, Iterable
 
 class LabeledPoint:
     """A 3D point with one or more labels"""
@@ -204,6 +204,10 @@ class CuboidAnchorCollection(AnchorCollection):
         if isinstance(corner_coords, AnchorCollection):
             corner_coords = [x.coords for x in corner_coords]
 
+        # make sure each point is 3D
+        for coord in corner_coords:
+            assert(len(coord) == 3)
+
         corner_coords = self._sort_coords(corner_coords)
         labels = self._create_labels()
         labeled_points = [LabeledPoint(c,l) for c,l in zip(corner_coords, labels)]
@@ -268,4 +272,3 @@ class CuboidAnchorCollection(AnchorCollection):
         add(labels[:, :, 0], 'bottom')
         add(labels[:, :, 1], 'top')
         return labels.flatten()
-

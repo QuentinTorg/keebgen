@@ -92,7 +92,7 @@ class KeyGrid:
                     continue
 
                 # apply rotation around the center of the key
-                center = np.array(key.anchors.center())
+                center = np.array(key.anchors.centroid())
                 key.translate(*(-center))
                 key.rotate(*rotation, degrees=degrees)
                 key.translate(*center)
@@ -101,7 +101,7 @@ class KeyGrid:
 
         keys = self.keys()
         # move the origin to the center of all the keys
-        grid_center = np.array(utils.mean_point([x.anchors.center() for x in keys]))
+        grid_center = np.array(utils.mean_point([x.anchors.centroid() for x in keys]))
         # grid_center[2] = 10
         [x.translate(*(-grid_center)) for x in keys]
 
@@ -118,7 +118,7 @@ class KeyGrid:
 
 
 
-                kx,ky,kz = key.anchors.center()
+                kx,ky,kz = key.anchors.centroid()
 
                 x_angle = -angle_between([kz, ky], [rz, ry])
                 y_angle = -angle_between([kz, kx], [rz, rx])
@@ -135,14 +135,14 @@ class KeyGrid:
                 # Rotate to face the r point
 
                 # Get new key position
-                kx, ky, kz = key.anchors.center()
+                kx, ky, kz = key.anchors.centroid()
 
                 x_angle = angle_between([kz, ky], [rz, ry])/2
                 y_angle = angle_between([kz, kx], [rz, rx])/2
                 z_angle = angle_between([kx, ky], [rx, ry]) - np.pi / 2
 
                 # print('angle2', x_angle, y_angle, z_angle)
-                center = np.array(key.anchors.center())
+                center = np.array(key.anchors.centroid())
                 # key.translate(*(-center))
                 # key.rotate(x_angle, y_angle, 0, degrees=False)
                 # key.translate(*center)
@@ -324,7 +324,7 @@ class ManuformThumbCluster(ThumbCluster):
         self.skirt = None # TODO: Should this be done at the keyboard level?
 
         # move the TC so the home key is in the center
-        offset = [-x for x in self.home_key.anchors.center()]
+        offset = [-x for x in self.home_key.anchors.centroid()]
         self.translate(*offset)
 
     @property

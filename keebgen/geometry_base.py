@@ -177,7 +177,7 @@ class AnchorCollection:
         return tuple(np.max(coords, axis=0) -
                      np.min(coords, axis=0))
 
-    def center(self):
+    def centroid(self):
         return tuple(np.mean(self.coords, axis=0))
 
     def translate(self, x=0, y=0, z=0):
@@ -254,6 +254,7 @@ class CuboidAnchorCollection(AnchorCollection):
         2--|----6  |
         |  1----|--5
         | /     | / Y
+        |/      |/
         0-------4
             X
         """

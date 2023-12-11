@@ -1,10 +1,12 @@
 from keebgen.better_abc import abstractmethod
 import numpy as np
+import solid as sl
 
-from .geometry_base import Assembly, PartCollection, CuboidAnchorCollection
+from .geometry_base import Assembly, PartCollection, CuboidAnchorCollection, LabeledPoint, AnchorCollection
 from . import geometry_utils as utils
 from .key_assy import FaceAlignedKey
 from .connector import Connector
+from .finger import Finger
 
 class KeyColumn(Assembly):
     @abstractmethod
@@ -27,6 +29,8 @@ class ConcaveOrtholinearColumn(KeyColumn):
         home_index = config.getint('home_index')
         key_lean = config.getfloat('key_side_lean')
         home_angle = config.getfloat('home_tiltback_angle')
+        show_finger_wireframe = config.getboolean('show_finger_wireframe')
+        first_digit_len = config.getfloat('first_digit_len')
 
         prev_anchors = None
         self._key_names = []
@@ -60,6 +64,18 @@ class ConcaveOrtholinearColumn(KeyColumn):
             rotation_angle = one_offset * -rotation_index
             self._parts.rotate(-rotation_angle, 0, 0, degrees=False, name=key_name)
             self._parts.translate(0, 0, radius, name=key_name)
+
+            if show_finger_wireframe and rotation_index == 0:
+                finger_name = str(key_name) + "_finger"
+
+                self._parts.add(Finger(radius, first_digit_len, home_angle), finger_name)
+
+                #self._parts.get(finger_name)._solid += first_to_second_connector.solid()
+                # rotate the tip of the finger, then add the first to second knuckle connection
+                self._parts.rotate(-rotation_angle, 0, 0, degrees=False, name=finger_name)
+                self._parts.rotate(0, key_lean, 0, name=finger_name)
+                self._parts.translate(0, 0, radius, name=finger_name)
+
 
             if prev_anchors is not None:
                 connector = Connector(prev_anchors + self.get_part(key_name).anchors_by_part('socket')['back'])

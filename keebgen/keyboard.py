@@ -25,10 +25,19 @@ class DactylManuform(Keyboard):
         # all of these numbers should come from the config file or default config
         # TODO will want different spacing for end cols if they are tilted
         num_cols = 6
+
         index_radius = 56.4
+        index_first_digit_len = 55.5
+
         middle_radius = 65.0
+        middle_first_digit_len = 62
+
         ring_radius = 64.0
+        ring_first_digit_len = 59
+
         pinky_radius = 48.9
+        pinky_first_digit_len = 44
+
         section_name = 'column'
         col_configs = []
         for col in range(num_cols):
@@ -45,18 +54,24 @@ class DactylManuform(Keyboard):
             # set side lean
             if col == 0:
                 new_conf.set(section_name, 'key_side_lean', str(20))
+                new_conf.set(section_name, 'show_finger_wireframe', 'false')
             elif col == num_cols-1:
                 new_conf.set(section_name, 'key_side_lean', str(-20))
+                new_conf.set(section_name, 'show_finger_wireframe', 'false')
 
             # set radius by finger
             if col <= 1:
                 new_conf.set(section_name, 'radius', str(index_radius))
+                new_conf.set(section_name, 'first_digit_len', str(index_first_digit_len))
             elif col == 2:
                 new_conf.set(section_name, 'radius', str(middle_radius))
+                new_conf.set(section_name, 'first_digit_len', str(middle_first_digit_len))
             elif col == 3:
                 new_conf.set(section_name, 'radius', str(ring_radius))
+                new_conf.set(section_name, 'first_digit_len', str(ring_first_digit_len))
             else:
                 new_conf.set(section_name, 'radius', str(pinky_radius))
+                new_conf.set(section_name, 'first_digit_len', str(pinky_first_digit_len))
 
             col_configs.append(new_conf[section_name])
 
@@ -192,7 +207,7 @@ class DactylManuform(Keyboard):
         thumbcluster.rotate(20, -30, 20, degrees=True)
         thumbcluster.translate(-5,-3,-7)
 
-        anchor_pos = list(col.get_part(-1).anchors.center())
+        anchor_pos = list(col.get_part(-1).anchors.centroid())
         anchor_pos[1] -= tc_home_key.anchors.bounds()[1]  # shift alone y axis
         tc_offset = [x for x in anchor_pos]
         thumbcluster.translate(*tc_offset)

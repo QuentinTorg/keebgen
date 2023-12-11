@@ -20,23 +20,23 @@ def _sanitize_points(maybe_point):
     return maybe_point
 
 # helper function to make tiny spheres around an iterable of points
-def _make_spheres(geo):
+def _make_spheres(geo, diameter):
     geo = _sanitize_points(geo)
     spheres = []
     for point in geo:
-        spheres.append(sl.translate(point.coords)(sl.sphere(d=0.001)))
+        spheres.append(sl.translate(point.coords)(sl.sphere(d=diameter)))
     return spheres
 
 
 #Connectors will create a part that is a convex hull around all points in *args
 class Connector(Part):
-    def __init__(self, anchors: AnchorCollection):
+    def __init__(self, anchors: AnchorCollection, diameter=0.001):
         super().__init__()
         assert len(anchors) > 0
         self._anchors = AnchorCollection.copy_from(anchors)
 
         # using hull around tiny spheres is a hack, but whatever. saves a ton of code
-        spheres = _make_spheres(self._anchors)
+        spheres = _make_spheres(self._anchors, diameter)
         # make sure we didn't end up with zero points
         # TODO we may want to adjust this functionality later and just return solid.part() for empty connectors
         assert len(spheres) > 0
